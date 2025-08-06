@@ -24,6 +24,7 @@ Route::prefix('qr')->name('qr.')->group(function () {
     Route::get('/download/{nis}', [QrController::class, 'download'])->name('download');
     Route::get('/image/{nis}', [QrController::class, 'image'])->name('image');
     Route::get('/download-all/zip', [QrController::class, 'downloadAll'])->name('download.all');
+    Route::get('/download-all/pdf', [QrController::class, 'downloadAllPdf'])->name('download.all.pdf');
 });
 
 // Route untuk Jadwal

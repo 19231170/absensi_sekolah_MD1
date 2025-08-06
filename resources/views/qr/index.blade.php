@@ -12,10 +12,26 @@
                     QR Code Siswa
                 </h4>
                 <div class="d-flex gap-2">
-                    <a href="{{ route('qr.download.all') }}" class="btn btn-light">
-                        <i class="fas fa-download me-1"></i>
-                        Download Semua QR
-                    </a>
+                    <div class="dropdown">
+                        <button class="btn btn-success dropdown-toggle" type="button" id="dropdownDownloadAll" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-download me-1"></i>
+                            Download Semua QR
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownDownloadAll">
+                            <li>
+                                <a class="dropdown-item" href="{{ route('qr.download.all.pdf') }}">
+                                    <i class="fas fa-file-pdf me-2 text-danger"></i>
+                                    Download PDF
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('qr.download.all') }}">
+                                    <i class="fas fa-file-zipper me-2 text-warning"></i>
+                                    Download ZIP/HTML
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                     <a href="{{ route('absensi.scan') }}" class="btn btn-outline-light">
                         <i class="fas fa-camera me-1"></i>
                         Kembali ke Scan

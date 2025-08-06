@@ -134,10 +134,23 @@
                         <i class="fas fa-qrcode me-2"></i>
                         Mulai Absensi
                     </a>
-                    <a href="{{ route('qr.index') }}" class="btn btn-success btn-lg ms-2">
-                        <i class="fas fa-download me-2"></i>
-                        Download QR Siswa
-                    </a>
+                    <div class="btn-group ms-2" role="group">
+                        <button type="button" class="btn btn-success btn-lg dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-download me-2"></i>
+                            Download QR Siswa
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ route('qr.index') }}">
+                                <i class="fas fa-eye me-2"></i>Lihat Semua QR
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ route('qr.download.all.pdf') }}">
+                                <i class="fas fa-file-pdf me-2 text-danger"></i>Download PDF
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ route('qr.download.all') }}">
+                                <i class="fas fa-file-zipper me-2 text-warning"></i>Download ZIP/HTML
+                            </a></li>
+                        </ul>
+                    </div>
                 </div>
 
             </div>
