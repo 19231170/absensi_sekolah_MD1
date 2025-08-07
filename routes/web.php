@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\QrController;
-use App\Http\Controllers\JadwalController;
+use App\Http\Controllers\JadwalKelasController;
 use Illuminate\Http\Request;
 
 Route::get('/', function () {
@@ -27,8 +27,12 @@ Route::prefix('qr')->name('qr.')->group(function () {
     Route::get('/download-all/pdf', [QrController::class, 'downloadAllPdf'])->name('download.all.pdf');
 });
 
-// Route untuk Jadwal
-Route::get('/jadwal', [JadwalController::class, 'index'])->name('jadwal.index');
+// Route untuk Jadwal Persesi (CRUD)
+Route::resource('jadwal-kelas', JadwalKelasController::class)->parameters([
+    'jadwal-kelas' => 'jadwalKelas'
+]);
+Route::patch('jadwal-kelas/{jadwalKelas}/toggle-active', [JadwalKelasController::class, 'toggleActive'])
+    ->name('jadwal-kelas.toggle-active');
 
 // Debug route (hanya untuk development)
 if (config('app.debug')) {

@@ -354,11 +354,61 @@
 
 /* Result container styling */
 .scanner-result {
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 20px;
+    background: #ffffff;
+    border: 2px solid #28a745;
+    border-radius: 12px;
+    padding: 25px;
     margin-top: 15px;
+    box-shadow: 0 4px 20px rgba(40, 167, 69, 0.15);
+}
+
+.scanner-result h5 {
+    color: #28a745;
+    font-weight: 600;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.scanner-result .row {
+    margin: 0;
+}
+
+.scanner-result .col-6 {
+    padding: 10px 15px;
+}
+
+.scanner-result strong {
+    color: #495057;
+    font-weight: 600;
+    display: inline-block;
+    min-width: 80px;
+}
+
+.scanner-result span:not(.status-badge) {
+    color: #212529;
+    font-weight: 500;
+}
+
+.scanner-result br {
+    margin-bottom: 8px;
+}
+
+/* Data field styling */
+.scanner-result .col-6 > div {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-left: 4px solid #28a745;
+}
+
+.scanner-result .col-6:first-child > div {
+    border-left-color: #007bff;
+}
+
+.scanner-result .col-6:last-child > div {
+    border-left-color: #6f42c1;
 }
 
 /* Button improvements */

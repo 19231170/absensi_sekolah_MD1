@@ -26,11 +26,13 @@
             font-weight: 600;
         }
         .scanner-result {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #ffffff;
+            color: #212529;
+            border: 2px solid #28a745;
             border-radius: 15px;
             padding: 20px;
             margin-top: 20px;
+            box-shadow: 0 4px 20px rgba(40, 167, 69, 0.15);
         }
         .status-badge {
             font-size: 0.9em;
@@ -61,8 +63,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('jadwal.index') }}">
-                            <i class="fas fa-calendar-alt me-1"></i> Jadwal
+                        <a class="nav-link" href="{{ route('jadwal-kelas.index') }}">
+                            <i class="fas fa-calendar-alt me-1"></i> Jadwal Persesi
                         </a>
                     </li>
                     <li class="nav-item">

@@ -5,15 +5,31 @@ namespace App\Http\Controllers;
 use App\Models\Siswa;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Log;
 
 class QrController extends Controller
 {
     /**
      * Tampilkan daftar QR code siswa untuk testing
      */
-    public function index()
+    public function index(Request $request)
     {
-        $siswa = Siswa::with('kelas.jurusan')->aktif()->get();
+        $search = $request->get('search');
+        
+        if ($search && trim($search) !== '') {
+            // Simple search - hanya NIS dan nama untuk menghindari relationship issues
+            $siswa = Siswa::with(['kelas', 'kelas.jurusan'])
+                ->aktif()
+                ->where(function($query) use ($search) {
+                    $query->where('nis', 'LIKE', '%' . trim($search) . '%')
+                          ->orWhere('nama', 'LIKE', '%' . trim($search) . '%');
+                })
+                ->orderBy('nama')
+                ->get();
+        } else {
+            $siswa = Siswa::with(['kelas', 'kelas.jurusan'])->aktif()->orderBy('nama')->get();
+        }
+        
         return view('qr.index', compact('siswa'));
     }
 

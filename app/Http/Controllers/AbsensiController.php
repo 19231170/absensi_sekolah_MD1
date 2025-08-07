@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AbsensiController extends Controller
 {
@@ -227,6 +228,7 @@ class AbsensiController extends Controller
     {
         $tanggal = $request->get('tanggal', Carbon::today('Asia/Jakarta'));
         $jamSekolahId = $request->get('jam_sekolah_id');
+        $export = $request->get('export');
 
         $query = Absensi::with(['siswa.kelas.jurusan', 'jamSekolah'])
             ->whereDate('tanggal', $tanggal);
@@ -238,6 +240,120 @@ class AbsensiController extends Controller
         $absensi = $query->orderBy('jam_masuk', 'desc')->get();
         $jamSekolah = JamSekolah::aktif()->get();
 
+        // Handle export requests
+        if ($export === 'excel') {
+            return $this->exportExcel($absensi, $tanggal, $jamSekolahId);
+        }
+        
+        if ($export === 'pdf') {
+            return $this->exportPdf($absensi, $tanggal, $jamSekolahId);
+        }
+
         return view('absensi.laporan', compact('absensi', 'jamSekolah', 'tanggal', 'jamSekolahId'));
+    }
+
+    /**
+     * Export laporan ke Excel (HTML format)
+     */
+    private function exportExcel($absensi, $tanggal, $jamSekolahId)
+    {
+        $fileName = 'Laporan_Absensi_' . Carbon::parse($tanggal)->format('Y-m-d') . '.xls';
+        
+        $html = $this->generateExcelHtml($absensi, $tanggal, $jamSekolahId);
+        
+        return response($html)
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+    }
+
+    /**
+     * Export laporan ke PDF
+     */
+    private function exportPdf($absensi, $tanggal, $jamSekolahId)
+    {
+        $fileName = 'Laporan_Absensi_' . Carbon::parse($tanggal)->format('Y-m-d') . '.pdf';
+        
+        $jamSekolah = JamSekolah::aktif()->get();
+        $selectedSesi = $jamSekolahId ? $jamSekolah->find($jamSekolahId) : null;
+        
+        $pdf = Pdf::loadView('absensi.laporan-pdf', compact('absensi', 'tanggal', 'selectedSesi'));
+        
+        return $pdf->download($fileName);
+    }
+
+    /**
+     * Generate HTML untuk Excel export
+     */
+    private function generateExcelHtml($absensi, $tanggal, $jamSekolahId)
+    {
+        $jamSekolah = JamSekolah::aktif()->get();
+        $selectedSesi = $jamSekolahId ? $jamSekolah->find($jamSekolahId) : null;
+        
+        $html = '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Laporan Absensi</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+        .text-center { text-align: center; }
+    </style>
+</head>
+<body>
+    <h2 class="text-center">LAPORAN ABSENSI SISWA</h2>
+    <p><strong>Tanggal:</strong> ' . Carbon::parse($tanggal)->format('d/m/Y') . '</p>';
+    
+        if ($selectedSesi) {
+            $html .= '<p><strong>Sesi:</strong> ' . $selectedSesi->nama_sesi . ' (' . $selectedSesi->jam_masuk . ' - ' . $selectedSesi->jam_keluar . ')</p>';
+        } else {
+            $html .= '<p><strong>Sesi:</strong> Semua Sesi</p>';
+        }
+        
+        $html .= '
+    <table>
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>NIS</th>
+                <th>Nama Siswa</th>
+                <th>Kelas</th>
+                <th>Jurusan</th>
+                <th>Sesi</th>
+                <th>Jam Masuk</th>
+                <th>Jam Keluar</th>
+                <th>Status Masuk</th>
+                <th>Status Keluar</th>
+                <th>Keterangan</th>
+            </tr>
+        </thead>
+        <tbody>';
+        
+        foreach ($absensi as $index => $item) {
+            $html .= '<tr>
+                <td>' . ($index + 1) . '</td>
+                <td>' . $item->nis . '</td>
+                <td>' . $item->siswa->nama . '</td>
+                <td>' . $item->siswa->kelas->nama_lengkap . '</td>
+                <td>' . $item->siswa->kelas->jurusan->nama_jurusan . '</td>
+                <td>' . $item->jamSekolah->nama_sesi . '</td>
+                <td>' . ($item->jam_masuk ?? '-') . '</td>
+                <td>' . ($item->jam_keluar ?? '-') . '</td>
+                <td>' . ucfirst($item->status_masuk) . '</td>
+                <td>' . ($item->status_keluar ? 'Sudah Keluar' : 'Belum Keluar') . '</td>
+                <td>' . ($item->keterangan ?? '-') . '</td>
+            </tr>';
+        }
+        
+        $html .= '</tbody>
+    </table>
+    <br>
+    <p><strong>Total Data:</strong> ' . $absensi->count() . ' siswa</p>
+    <p><strong>Dicetak pada:</strong> ' . Carbon::now('Asia/Jakarta')->format('d/m/Y H:i:s') . ' WIB</p>
+</body>
+</html>';
+
+        return $html;
     }
 }
