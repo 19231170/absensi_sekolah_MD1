@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('jam_sekolah', function (Blueprint $table) {
-            $table->json('hari_berlaku')->nullable()->after('nama_sesi'); // ['senin', 'selasa', 'rabu', dll]
-            $table->string('jenis_sesi')->default('pagi')->after('hari_berlaku'); // 'pagi' atau 'siang'
+            $table->json('hari_berlaku')->nullable()->after('nama_sesi');
+            $table->enum('jenis_sesi', ['pagi', 'siang', 'malam'])->default('pagi')->after('hari_berlaku');
         });
     }
 

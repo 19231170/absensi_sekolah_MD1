@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('nama_kelas');
             $table->string('tingkat'); // X, XI, XII
             $table->foreignId('jurusan_id')->constrained('jurusan')->onDelete('cascade');
-            $table->integer('kapasitas')->default(40);
+            $table->integer('kapasitas')->default(40)->nullable();
             $table->timestamps();
         });
     }

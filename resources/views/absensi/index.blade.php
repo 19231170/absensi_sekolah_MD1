@@ -73,6 +73,11 @@
                                     <div class="qr-corner qr-corner-bottom-left"></div>
                                     <div class="qr-corner qr-corner-bottom-right"></div>
                                     <div class="qr-scanner-line"></div>
+                                    <!-- QR Code guide lines -->
+                                    <div class="qr-guide-lines">
+                                        <div class="guide-line guide-line-h"></div>
+                                        <div class="guide-line guide-line-v"></div>
+                                    </div>
                                 </div>
                                 <div class="qr-scanner-text">
                                     <p class="text-white text-center mb-1">
@@ -175,9 +180,11 @@
 <style>
 /* QR Scanner Styles */
 .scanner-wrapper {
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
     background: #000;
+    position: relative;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
 }
 
 .qr-scanner-overlay {
@@ -190,74 +197,182 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.4);
     z-index: 10;
 }
 
 .qr-scanner-box {
     position: relative;
-    width: 250px;
-    height: 250px;
-    margin-bottom: 20px;
+    width: 260px;
+    height: 260px;
+    margin-bottom: 30px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
 }
 
 .qr-corner {
     position: absolute;
-    width: 30px;
-    height: 30px;
-    border: 3px solid #00ff00;
+    width: 35px;
+    height: 35px;
+    border: 4px solid #00ff88;
+    animation: pulse 1.5s ease-in-out infinite;
+    border-radius: 4px;
 }
 
 .qr-corner-top-left {
-    top: 0;
-    left: 0;
+    top: -2px;
+    left: -2px;
     border-right: none;
     border-bottom: none;
+    border-top-left-radius: 8px;
 }
 
 .qr-corner-top-right {
-    top: 0;
-    right: 0;
+    top: -2px;
+    right: -2px;
     border-left: none;
     border-bottom: none;
+    border-top-right-radius: 8px;
 }
 
 .qr-corner-bottom-left {
-    bottom: 0;
-    left: 0;
+    bottom: -2px;
+    left: -2px;
     border-right: none;
     border-top: none;
+    border-bottom-left-radius: 8px;
 }
 
 .qr-corner-bottom-right {
-    bottom: 0;
-    right: 0;
+    bottom: -2px;
+    right: -2px;
     border-left: none;
     border-top: none;
+    border-bottom-right-radius: 8px;
 }
 
 .qr-scanner-line {
     position: absolute;
     top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, #00ff00, transparent);
+    left: 10px;
+    right: 10px;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #00ff88, #00ff88, transparent);
+    border-radius: 2px;
     animation: scanLine 2s linear infinite;
+    box-shadow: 0 0 10px #00ff88;
+}
+
+.qr-scanner-text {
+    text-align: center;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.qr-scanner-text p {
+    margin: 0 0 5px 0;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.qr-scanner-text small {
+    font-size: 13px;
+    opacity: 0.8;
+    display: block;
 }
 
 @keyframes scanLine {
-    0% {
-        top: 0;
-        opacity: 1;
+    0% { 
+        top: 10px; 
+        opacity: 0; 
+        transform: scaleX(0.5);
     }
-    50% {
-        opacity: 1;
+    25% { 
+        opacity: 1; 
+        transform: scaleX(1);
     }
-    100% {
-        top: 248px;
-        opacity: 0;
+    75% { 
+        opacity: 1; 
+        transform: scaleX(1);
     }
+    100% { 
+        top: 240px; 
+        opacity: 0; 
+        transform: scaleX(0.5);
+    }
+}
+
+@keyframes pulse {
+    0% { 
+        border-color: #00ff88; 
+        box-shadow: 0 0 5px #00ff88, inset 0 0 5px rgba(0,255,136,0.2); 
+        transform: scale(1);
+    }
+    50% { 
+        border-color: #00ffaa; 
+        box-shadow: 0 0 20px #00ff88, inset 0 0 10px rgba(0,255,136,0.3); 
+        transform: scale(1.05);
+    }
+    100% { 
+        border-color: #00ff88; 
+        box-shadow: 0 0 5px #00ff88, inset 0 0 5px rgba(0,255,136,0.2); 
+        transform: scale(1);
+    }
+}
+
+/* Enhanced video display */
+#qr-video {
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+/* QR Code guide lines for better positioning */
+.qr-guide-lines {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    height: 80%;
+    pointer-events: none;
+}
+
+.guide-line {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 1px;
+}
+
+.guide-line-h {
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    transform: translateY(-50%);
+}
+
+.guide-line-v {
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    transform: translateX(-50%);
+}
+
+/* Torch button styles */
+#toggleTorch {
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255,255,255,0.3);
+}
+
+#toggleTorch:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255,255,255,0.2);
 }
 
 .qr-scanner-text {
@@ -298,8 +413,14 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .qr-scanner-box {
-        width: 200px;
-        height: 200px;
+        width: 220px;
+        height: 220px;
+    }
+    
+    .qr-corner {
+        width: 28px;
+        height: 28px;
+        border-width: 3px;
     }
     
     .qr-scanner-line {
@@ -307,17 +428,110 @@
     }
     
     @keyframes scanLine {
-        0% {
-            top: 0;
-            opacity: 1;
+        0% { 
+            top: 8px; 
+            opacity: 0; 
+            transform: scaleX(0.5);
         }
-        50% {
-            opacity: 1;
+        25% { 
+            opacity: 1; 
+            transform: scaleX(1);
         }
-        100% {
-            top: 198px;
-            opacity: 0;
+        75% { 
+            opacity: 1; 
+            transform: scaleX(1);
         }
+        100% { 
+            top: 205px; 
+            opacity: 0; 
+            transform: scaleX(0.5);
+        }
+    }
+    
+    #qr-video {
+        max-height: 320px;
+    }
+    
+    .qr-scanner-text p {
+        font-size: 14px;
+    }
+    
+    .qr-scanner-text small {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .qr-scanner-box {
+        width: 180px;
+        height: 180px;
+    }
+    
+    .qr-corner {
+        width: 25px;
+        height: 25px;
+        border-width: 2px;
+    }
+    
+    @keyframes scanLine {
+        0% { 
+            top: 8px; 
+            opacity: 0; 
+            transform: scaleX(0.5);
+        }
+        25% { 
+            opacity: 1; 
+            transform: scaleX(1);
+        }
+        75% { 
+            opacity: 1; 
+            transform: scaleX(1);
+        }
+        100% { 
+            top: 165px; 
+            opacity: 0; 
+            transform: scaleX(0.5);
+        }
+    }
+    
+    #qr-video {
+        max-height: 280px;
+    }
+    
+    .qr-scanner-text p {
+        font-size: 13px;
+    }
+    
+    .qr-scanner-text small {
+        font-size: 11px;
+    }
+    
+    .btn-custom {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .qr-scanner-line {
+        height: 4px;
+    }
+    
+    .qr-corner {
+        border-width: 5px;
+    }
+}
+
+/* Landscape orientation optimizations */
+@media (orientation: landscape) and (max-height: 500px) {
+    .qr-scanner-box {
+        width: 160px;
+        height: 160px;
+    }
+    
+    #qr-video {
+        max-height: 220px;
     }
 }
 
@@ -502,12 +716,16 @@ $(document).ready(function() {
         const canvas = document.getElementById('qr-canvas');
         const context = canvas.getContext('2d');
         
-        // Request camera dengan preferensi back camera
+        // Enhanced camera constraints for optimal QR detection
         const constraints = {
             video: {
                 facingMode: { ideal: "environment" },
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
+                width: { ideal: 1920, min: 640 },
+                height: { ideal: 1080, min: 480 },
+                frameRate: { ideal: 30, min: 15 },
+                focusMode: "continuous",
+                exposureMode: "continuous",
+                whiteBalanceMode: "continuous"
             }
         };
         
@@ -517,19 +735,47 @@ $(document).ready(function() {
             video.play();
             scanning = true;
             
+            // Apply advanced camera settings for better QR detection
+            const track = stream.getVideoTracks()[0];
+            if (track.getCapabilities) {
+                const capabilities = track.getCapabilities();
+                const settings = {};
+                
+                // Optimize camera settings for QR code scanning
+                if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+                    settings.focusMode = 'continuous';
+                }
+                if (capabilities.exposureMode && capabilities.exposureMode.includes('continuous')) {
+                    settings.exposureMode = 'continuous';
+                }
+                if (capabilities.whiteBalanceMode && capabilities.whiteBalanceMode.includes('continuous')) {
+                    settings.whiteBalanceMode = 'continuous';
+                }
+                
+                if (Object.keys(settings).length > 0) {
+                    track.applyConstraints({ advanced: [settings] }).catch(console.warn);
+                }
+            }
+            
             // Reset scan statistics
             scanStats = {
                 frameCount: 0,
                 lastDetectionTime: 0,
-                noDetectionCount: 0
+                noDetectionCount: 0,
+                enhancedAttempts: 0
             };
             
             $('#startScan').addClass('d-none');
             $('#stopScan').removeClass('d-none');
             $('#scanner-container').removeClass('d-none');
             
-            // Wait for video to be ready
+            // Add torch/flash button if supported
+            addTorchButton(stream);
+            
+            // Wait for video to be ready and start scanning
             video.addEventListener('loadedmetadata', function() {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
                 scanQRCode(video, canvas, context);
             });
             
@@ -572,49 +818,148 @@ $(document).ready(function() {
         scanStats.frameCount++;
         
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
-            canvas.height = video.videoHeight;
+            // Ensure canvas matches video dimensions
             canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // Draw current video frame
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             
+            // Get image data for QR detection
             const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
             
-            // Try multiple detection methods for better accuracy
-            const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                inversionAttempts: "dontInvert",
+            // Enhanced QR detection with multiple strategies
+            let code = null;
+            
+            // Strategy 1: Standard detection with both inversions
+            code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "attemptBoth"
             });
             
-            // Update scanner status
+            // Strategy 2: Focus on center region if no detection
+            if (!code && canvas.width > 400 && canvas.height > 400) {
+                const centerW = canvas.width * 0.6;
+                const centerH = canvas.height * 0.6;
+                const offsetX = (canvas.width - centerW) / 2;
+                const offsetY = (canvas.height - centerH) / 2;
+                
+                const centerData = context.getImageData(offsetX, offsetY, centerW, centerH);
+                code = jsQR(centerData.data, centerData.width, centerData.height, {
+                    inversionAttempts: "attemptBoth"
+                });
+            }
+            
+            // Strategy 3: Image enhancement after several failed attempts
+            if (!code && scanStats.frameCount % 15 === 0) { // Try every 0.5 seconds
+                scanStats.enhancedAttempts++;
+                code = enhanceImageAndScan(context, canvas, imageData);
+            }
+            
+            // Update scanner status and provide real-time feedback
             if (code) {
                 $('#scanner-status').text('QR Code terdeteksi! Memproses...');
-                $('#scanner-tips').text('Tetap tahan posisi QR Code');
+                $('#scanner-tips').text('Berhasil! Sedang memproses data...');
                 
-                // Play success sound
+                // Success feedback
                 playSuccessSound();
-                
-                // Visual feedback
                 flashScreen();
                 
-                // Process the QR code
+                // Process the detected QR code
                 processQRCode(code.data);
                 stopQRScanner();
                 return;
             } else {
                 scanStats.noDetectionCount++;
                 
-                // Provide helpful tips based on scanning duration
-                if (scanStats.frameCount % 60 === 0) { // Every 2 seconds (30fps)
-                    if (scanStats.noDetectionCount > 180) { // After 6 seconds
-                        $('#scanner-status').text('QR Code tidak terdeteksi');
-                        $('#scanner-tips').text('Coba pindahkan posisi atau periksa pencahayaan');
-                    } else if (scanStats.noDetectionCount > 90) { // After 3 seconds
-                        $('#scanner-status').text('Mencari QR Code...');
-                        $('#scanner-tips').text('Pastikan QR Code berada di dalam kotak hijau');
-                    }
+                // Provide dynamic guidance based on scan duration
+                if (scanStats.frameCount % 30 === 0) { // Every second at 30fps
+                    updateScannerGuidance();
                 }
             }
         }
         
+        // Continue scanning with optimized frame rate
         requestAnimationFrame(() => scanQRCode(video, canvas, context));
+    }
+    
+    function enhanceImageAndScan(context, canvas, originalData) {
+        // Create enhanced image data for better QR detection
+        const enhancedData = context.createImageData(canvas.width, canvas.height);
+        const data = enhancedData.data;
+        const original = originalData.data;
+        
+        // Apply multiple enhancement techniques
+        for (let i = 0; i < original.length; i += 4) {
+            // Convert to grayscale with weighted average
+            const gray = 0.299 * original[i] + 0.587 * original[i + 1] + 0.114 * original[i + 2];
+            
+            // Apply adaptive threshold for better contrast
+            const threshold = 128;
+            const enhanced = gray > threshold ? 255 : 0;
+            
+            data[i] = enhanced;     // R
+            data[i + 1] = enhanced; // G  
+            data[i + 2] = enhanced; // B
+            data[i + 3] = 255;      // A
+        }
+        
+        // Try scanning the enhanced image
+        return jsQR(data, canvas.width, canvas.height, {
+            inversionAttempts: "attemptBoth"
+        });
+    }
+    
+    function updateScannerGuidance() {
+        const duration = scanStats.frameCount / 30; // Approximate seconds
+        
+        if (duration > 10) {
+            $('#scanner-status').text('QR Code tidak terdeteksi');
+            $('#scanner-tips').text('Coba gunakan flash atau periksa kualitas QR Code');
+        } else if (duration > 6) {
+            $('#scanner-status').text('Masih mencari...');
+            $('#scanner-tips').text('Coba pindahkan posisi atau periksa pencahayaan');
+        } else if (duration > 3) {
+            $('#scanner-status').text('Mencari QR Code...');
+            $('#scanner-tips').text('Pastikan QR Code berada di dalam kotak hijau');
+        } else {
+            $('#scanner-status').text('Siap memindai');
+            $('#scanner-tips').text('Arahkan QR Code ke tengah kotak hijau');
+        }
+    }
+    
+    function addTorchButton(stream) {
+        // Check if torch/flash is supported
+        const track = stream.getVideoTracks()[0];
+        if (track.getCapabilities && track.getCapabilities().torch) {
+            const torchButton = `
+                <div class="text-center mt-2">
+                    <button type="button" class="btn btn-outline-light btn-sm" id="toggleTorch">
+                        <i class="fas fa-lightbulb me-1"></i> Flash
+                    </button>
+                </div>
+            `;
+            $('.qr-scanner-text').append(torchButton);
+            
+            let torchOn = false;
+            $('#toggleTorch').click(function() {
+                torchOn = !torchOn;
+                track.applyConstraints({
+                    advanced: [{ torch: torchOn }]
+                }).then(() => {
+                    const icon = $(this).find('i');
+                    if (torchOn) {
+                        icon.removeClass('fa-lightbulb').addClass('fa-lightbulb-on text-warning');
+                        $(this).addClass('btn-warning').removeClass('btn-outline-light');
+                    } else {
+                        icon.removeClass('fa-lightbulb-on text-warning').addClass('fa-lightbulb');
+                        $(this).removeClass('btn-warning').addClass('btn-outline-light');
+                    }
+                }).catch((err) => {
+                    console.warn('Torch not supported:', err);
+                    showAlert('warning', 'Flash tidak didukung pada perangkat ini', true);
+                });
+            });
+        }
     }
     
     function playSuccessSound() {

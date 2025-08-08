@@ -201,4 +201,61 @@ class QrController extends Controller
         
         return $pdf->download($fileName);
     }
+
+    /**
+     * Generate QR Code untuk Staff Authentication
+     */
+    public function generateStaffQr(Request $request)
+    {
+        $user = auth()->user();
+        
+        if (!$user || !in_array($user->role, ['admin', 'guru'])) {
+            return redirect()->back()->with('error', 'Tidak memiliki akses untuk generate QR Code staff.');
+        }
+
+        // Generate QR code jika belum ada
+        if (!$user->qr_code) {
+            $qrCode = $user->role === 'admin' ? 'ADM' . str_pad($user->id, 3, '0', STR_PAD_LEFT) : 'GRU' . str_pad($user->id, 3, '0', STR_PAD_LEFT);
+            $user->update(['qr_code' => $qrCode]);
+        }
+
+        return view('qr.staff', compact('user'));
+    }
+
+    /**
+     * Download Staff QR Code
+     */
+    public function downloadStaffQr(Request $request)
+    {
+        $user = auth()->user();
+        
+        if (!$user || !in_array($user->role, ['admin', 'guru'])) {
+            abort(403, 'Unauthorized');
+        }
+
+        // Ensure QR code exists
+        if (!$user->qr_code) {
+            $qrCode = $user->role === 'admin' ? 'ADM' . str_pad($user->id, 3, '0', STR_PAD_LEFT) : 'GRU' . str_pad($user->id, 3, '0', STR_PAD_LEFT);
+            $user->update(['qr_code' => $qrCode]);
+        }
+
+        try {
+            $qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=" . urlencode($user->qr_code);
+            $qrImage = file_get_contents($qrUrl);
+            
+            if ($qrImage === false) {
+                throw new \Exception('Failed to generate QR code image');
+            }
+            
+            $fileName = 'QR_Staff_' . $user->role . '_' . $user->qr_code . '.png';
+            
+            return response($qrImage)
+                ->header('Content-Type', 'image/png')
+                ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+                
+        } catch (\Exception $e) {
+            Log::error('Error generating staff QR: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal generate QR Code. Silakan coba lagi.');
+        }
+    }
 }

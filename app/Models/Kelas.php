@@ -14,7 +14,18 @@ class Kelas extends Model
         'nama_kelas',
         'tingkat',
         'jurusan_id',
-        'kapasitas'
+        'kapasitas',
+        'keterangan',
+        'is_active'
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'kapasitas' => 'integer'
+    ];
+
+    protected $attributes = [
+        'is_active' => true
     ];
 
     /**

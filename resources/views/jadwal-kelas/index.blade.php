@@ -63,9 +63,13 @@
                                             <button type="submit" class="btn btn-primary flex-fill">
                                                 <i class="fas fa-search me-1"></i> Filter
                                             </button>
-                                            <a href="{{ route('jadwal-kelas.create') }}" class="btn btn-success flex-fill">
-                                                <i class="fas fa-plus me-1"></i> Tambah
-                                            </a>
+                                            @auth
+                                                @if(auth()->user()->role === 'admin')
+                                                    <a href="{{ route('jadwal-kelas.create') }}" class="btn btn-success flex-fill">
+                                                        <i class="fas fa-plus me-1"></i> Tambah
+                                                    </a>
+                                                @endif
+                                            @endauth
                                         </div>
                                     </div>
                                 </form>
@@ -75,193 +79,232 @@
                 </div>
 
                 @if($jadwal->count() > 0)
-                    <!-- Sesi Pagi -->
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <h5 class="text-primary mb-3">
-                                <i class="fas fa-sun me-2"></i>
-                                Sesi Pagi (07:00 - 12:00)
-                            </h5>
-                            <div class="row">
-                                @foreach($jadwalPagi as $sesi)
-                                <div class="col-md-4 mb-3">
-                                    <div class="card border-primary {{ $sesi->is_active ? 'bg-primary-subtle' : 'bg-light' }}">
-                                        <div class="card-body">
-                                            <h6 class="card-title d-flex justify-content-between align-items-center">
-                                                <span>
-                                                    @if($sesi->is_active)
-                                                        <i class="fas fa-check-circle text-success me-1"></i>
-                                                    @else
-                                                        <i class="fas fa-pause-circle text-secondary me-1"></i>
-                                                    @endif
-                                                    {{ $sesi->kelas->tingkat }} {{ $sesi->kelas->nama_kelas }}
-                                                </span>
-                                                <span class="badge bg-info">{{ $sesi->nama_hari }}</span>
-                                            </h6>
-                                            <div class="card-text">
-                                                <div class="mb-2">
-                                                    <i class="fas fa-clock me-1"></i>
-                                                    <strong>Jam:</strong> {{ $sesi->jam_masuk_format }} - {{ $sesi->jam_keluar_format }}
-                                                </div>
-                                                @if($sesi->batas_telat)
-                                                <div class="mb-2">
-                                                    <i class="fas fa-hourglass-half me-1 text-warning"></i>
-                                                    <strong>Batas Telat:</strong> {{ Carbon\Carbon::parse($sesi->batas_telat)->format('H:i') }}
-                                                </div>
-                                                @endif
-                                                @if($sesi->mata_pelajaran)
-                                                <div class="mb-2">
-                                                    <i class="fas fa-book me-1"></i>
-                                                    <strong>Mapel:</strong> {{ $sesi->mata_pelajaran }}
-                                                </div>
-                                                @endif
-                                                @if($sesi->guru_pengampu)
-                                                <div class="mb-2">
-                                                    <i class="fas fa-chalkboard-teacher me-1"></i>
-                                                    <strong>Guru:</strong> {{ $sesi->guru_pengampu }}
-                                                </div>
-                                                @endif
-                                                <div class="mb-2">
-                                                    <i class="fas fa-graduation-cap me-1"></i>
-                                                    <strong>Jurusan:</strong> {{ $sesi->kelas->jurusan->nama_jurusan }}
-                                                </div>
-                                                <div class="mb-2">
-                                                    <i class="fas fa-clock me-1"></i>
-                                                    <strong>Durasi:</strong> {{ $sesi->durasi }}
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Action Buttons -->
-                                            <div class="mt-3">
-                                                <div class="btn-group w-100" role="group">
-                                                    <a href="{{ route('jadwal-kelas.show', $sesi->id) }}" class="btn btn-sm btn-outline-info" title="Detail">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    <a href="{{ route('jadwal-kelas.edit', $sesi->id) }}" class="btn btn-sm btn-outline-warning" title="Edit">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <form action="{{ route('jadwal-kelas.toggle-active', $sesi->id) }}" method="POST" class="d-inline">
-                                                        @csrf
-                                                        @method('PATCH')
-                                                        <button type="submit" class="btn btn-sm {{ $sesi->is_active ? 'btn-outline-secondary' : 'btn-outline-success' }}" title="{{ $sesi->is_active ? 'Nonaktifkan' : 'Aktifkan' }}">
-                                                            <i class="fas {{ $sesi->is_active ? 'fa-pause' : 'fa-play' }}"></i>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </div>
-
-                                            @if($sesi->is_active)
-                                                <div class="badge bg-success mt-2">
-                                                    <i class="fas fa-star me-1"></i>
-                                                    Jadwal Aktif
-                                                </div>
+                    @foreach($jadwalTerorganisir as $namaHari => $jadwalHari)
+                        <!-- Pemisah Hari -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="d-flex align-items-center mb-4">
+                                    <hr class="flex-grow-1 day-divider">
+                                    <div class="day-separator {{ $namaHari == $hariHariIni ? 'today-highlight' : '' }}">
+                                        <h4 class="text-white mb-0">
+                                            <i class="fas fa-calendar-day me-2"></i>
+                                            {{ ucfirst($namaHari) }}
+                                            @if($namaHari == $hariHariIni)
+                                                <span class="badge bg-warning text-dark ms-2">Hari Ini</span>
                                             @endif
-                                        </div>
+                                        </h4>
                                     </div>
+                                    <hr class="flex-grow-1 day-divider">
                                 </div>
-                                @endforeach
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Sesi Siang -->
-                    <div class="row">
-                        <div class="col-12">
-                            <h5 class="text-warning mb-3">
-                                <i class="fas fa-cloud-sun me-2"></i>
-                                Sesi Siang (12:00 - 17:00)
-                            </h5>
-                            <div class="row">
-                                @foreach($jadwalSiang as $sesi)
-                                <div class="col-md-4 mb-3">
-                                    <div class="card border-warning {{ $sesi->is_active ? 'bg-warning-subtle' : 'bg-light' }}">
-                                        <div class="card-body">
-                                            <h6 class="card-title d-flex justify-content-between align-items-center">
-                                                <span>
+                        @if($jadwalHari['pagi']->count() > 0)
+                            <!-- Sesi Pagi -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-primary mb-3 ms-3">
+                                        <i class="fas fa-sun me-2"></i>
+                                        Sesi Pagi (07:00 - 12:00)
+                                    </h5>
+                                    <div class="row">
+                                        @foreach($jadwalHari['pagi'] as $sesi)
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card border-primary {{ $sesi->is_active ? 'bg-primary-subtle' : 'bg-light' }}">
+                                                <div class="card-body">
+                                                    <h6 class="card-title d-flex justify-content-between align-items-center">
+                                                        <span>
+                                                            @if($sesi->is_active)
+                                                                <i class="fas fa-check-circle text-success me-1"></i>
+                                                            @else
+                                                                <i class="fas fa-pause-circle text-secondary me-1"></i>
+                                                            @endif
+                                                            {{ $sesi->kelas->tingkat }} {{ $sesi->kelas->nama_kelas }}
+                                                        </span>
+                                                        <span class="badge bg-{{ $namaHari == $hariHariIni ? 'warning' : 'info' }}">{{ ucfirst($sesi->hari) }}</span>
+                                                    </h6>
+                                                    <div class="card-text">
+                                                        <div class="mb-2">
+                                                            <i class="fas fa-clock me-1"></i>
+                                                            <strong>Jam:</strong> {{ $sesi->jam_masuk_format }} - {{ $sesi->jam_keluar_format }}
+                                                        </div>
+                                                        @if($sesi->batas_telat)
+                                                        <div class="mb-2">
+                                                            <i class="fas fa-hourglass-half me-1 text-warning"></i>
+                                                            <strong>Batas Telat:</strong> {{ Carbon\Carbon::parse($sesi->batas_telat)->format('H:i') }}
+                                                        </div>
+                                                        @endif
+                                                        @if($sesi->mata_pelajaran)
+                                                        <div class="mb-2">
+                                                            <i class="fas fa-book me-1"></i>
+                                                            <strong>Mapel:</strong> {{ $sesi->mata_pelajaran }}
+                                                        </div>
+                                                        @endif
+                                                        @if($sesi->guru_pengampu)
+                                                        <div class="mb-2">
+                                                            <i class="fas fa-chalkboard-teacher me-1"></i>
+                                                            <strong>Guru:</strong> {{ $sesi->guru_pengampu }}
+                                                        </div>
+                                                        @endif
+                                                        <div class="mb-2">
+                                                            <i class="fas fa-graduation-cap me-1"></i>
+                                                            <strong>Jurusan:</strong> {{ $sesi->kelas->jurusan->nama_jurusan }}
+                                                        </div>
+                                                        <div class="mb-2">
+                                                            <i class="fas fa-clock me-1"></i>
+                                                            <strong>Durasi:</strong> {{ $sesi->durasi }}
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Action Buttons -->
+                                                    <div class="mt-3">
+                                                        <div class="btn-group w-100" role="group">
+                                                            <a href="{{ route('jadwal-kelas.show', $sesi->id) }}" class="btn btn-sm btn-outline-info" title="Detail">
+                                                                <i class="fas fa-eye"></i>
+                                                            </a>
+                                                            <a href="{{ route('jadwal-kelas.edit', $sesi->id) }}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                            <form action="{{ route('jadwal-kelas.toggle-active', $sesi->id) }}" method="POST" class="d-inline">
+                                                                @csrf
+                                                                @method('PATCH')
+                                                                <button type="submit" class="btn btn-sm {{ $sesi->is_active ? 'btn-outline-secondary' : 'btn-outline-success' }}" title="{{ $sesi->is_active ? 'Nonaktifkan' : 'Aktifkan' }}">
+                                                                    <i class="fas {{ $sesi->is_active ? 'fa-pause' : 'fa-play' }}"></i>
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+
                                                     @if($sesi->is_active)
-                                                        <i class="fas fa-check-circle text-success me-1"></i>
-                                                    @else
-                                                        <i class="fas fa-pause-circle text-secondary me-1"></i>
+                                                        <div class="badge bg-success mt-2">
+                                                            <i class="fas fa-star me-1"></i>
+                                                            Jadwal Aktif
+                                                        </div>
                                                     @endif
-                                                    {{ $sesi->kelas->tingkat }} {{ $sesi->kelas->nama_kelas }}
-                                                </span>
-                                                <span class="badge bg-info">{{ $sesi->nama_hari }}</span>
-                                            </h6>
-                                            <div class="card-text">
-                                                <div class="mb-2">
-                                                    <i class="fas fa-clock me-1"></i>
-                                                    <strong>Jam:</strong> {{ $sesi->jam_masuk_format }} - {{ $sesi->jam_keluar_format }}
-                                                </div>
-                                                @if($sesi->batas_telat)
-                                                <div class="mb-2">
-                                                    <i class="fas fa-hourglass-half me-1 text-warning"></i>
-                                                    <strong>Batas Telat:</strong> {{ Carbon\Carbon::parse($sesi->batas_telat)->format('H:i') }}
-                                                </div>
-                                                @endif
-                                                @if($sesi->mata_pelajaran)
-                                                <div class="mb-2">
-                                                    <i class="fas fa-book me-1"></i>
-                                                    <strong>Mapel:</strong> {{ $sesi->mata_pelajaran }}
-                                                </div>
-                                                @endif
-                                                @if($sesi->guru_pengampu)
-                                                <div class="mb-2">
-                                                    <i class="fas fa-chalkboard-teacher me-1"></i>
-                                                    <strong>Guru:</strong> {{ $sesi->guru_pengampu }}
-                                                </div>
-                                                @endif
-                                                <div class="mb-2">
-                                                    <i class="fas fa-graduation-cap me-1"></i>
-                                                    <strong>Jurusan:</strong> {{ $sesi->kelas->jurusan->nama_jurusan }}
-                                                </div>
-                                                <div class="mb-2">
-                                                    <i class="fas fa-clock me-1"></i>
-                                                    <strong>Durasi:</strong> {{ $sesi->durasi }}
                                                 </div>
                                             </div>
-                                            
-                                            <!-- Action Buttons -->
-                                            <div class="mt-3">
-                                                <div class="btn-group w-100" role="group">
-                                                    <a href="{{ route('jadwal-kelas.show', $sesi->id) }}" class="btn btn-sm btn-outline-info" title="Detail">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    <a href="{{ route('jadwal-kelas.edit', $sesi->id) }}" class="btn btn-sm btn-outline-warning" title="Edit">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <form action="{{ route('jadwal-kelas.toggle-active', $sesi->id) }}" method="POST" class="d-inline">
-                                                        @csrf
-                                                        @method('PATCH')
-                                                        <button type="submit" class="btn btn-sm {{ $sesi->is_active ? 'btn-outline-secondary' : 'btn-outline-success' }}" title="{{ $sesi->is_active ? 'Nonaktifkan' : 'Aktifkan' }}">
-                                                            <i class="fas {{ $sesi->is_active ? 'fa-pause' : 'fa-play' }}"></i>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </div>
-
-                                            @if($sesi->is_active)
-                                                <div class="badge bg-success mt-2">
-                                                    <i class="fas fa-star me-1"></i>
-                                                    Jadwal Aktif
-                                                </div>
-                                            @endif
                                         </div>
+                                        @endforeach
                                     </div>
                                 </div>
-                                @endforeach
                             </div>
-                        </div>
-                    </div>
+                        @endif
+
+                        @if($jadwalHari['siang']->count() > 0)
+                            <!-- Sesi Siang -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-warning mb-3 ms-3">
+                                        <i class="fas fa-cloud-sun me-2"></i>
+                                        Sesi Siang (12:00 - 17:00)
+                                    </h5>
+                                    <div class="row">
+                                        @foreach($jadwalHari['siang'] as $sesi)
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card border-warning {{ $sesi->is_active ? 'bg-warning-subtle' : 'bg-light' }}">
+                                                <div class="card-body">
+                                                    <h6 class="card-title d-flex justify-content-between align-items-center">
+                                                        <span>
+                                                            @if($sesi->is_active)
+                                                                <i class="fas fa-check-circle text-success me-1"></i>
+                                                            @else
+                                                                <i class="fas fa-pause-circle text-secondary me-1"></i>
+                                                            @endif
+                                                            {{ $sesi->kelas->tingkat }} {{ $sesi->kelas->nama_kelas }}
+                                                        </span>
+                                                        <span class="badge bg-{{ $namaHari == $hariHariIni ? 'warning' : 'info' }}">{{ ucfirst($sesi->hari) }}</span>
+                                                    </h6>
+                                                    <div class="card-text">
+                                                        <div class="mb-2">
+                                                            <i class="fas fa-clock me-1"></i>
+                                                            <strong>Jam:</strong> {{ $sesi->jam_masuk_format }} - {{ $sesi->jam_keluar_format }}
+                                                        </div>
+                                                        @if($sesi->batas_telat)
+                                                        <div class="mb-2">
+                                                            <i class="fas fa-hourglass-half me-1 text-warning"></i>
+                                                            <strong>Batas Telat:</strong> {{ Carbon\Carbon::parse($sesi->batas_telat)->format('H:i') }}
+                                                        </div>
+                                                        @endif
+                                                        @if($sesi->mata_pelajaran)
+                                                        <div class="mb-2">
+                                                            <i class="fas fa-book me-1"></i>
+                                                            <strong>Mapel:</strong> {{ $sesi->mata_pelajaran }}
+                                                        </div>
+                                                        @endif
+                                                        @if($sesi->guru_pengampu)
+                                                        <div class="mb-2">
+                                                            <i class="fas fa-chalkboard-teacher me-1"></i>
+                                                            <strong>Guru:</strong> {{ $sesi->guru_pengampu }}
+                                                        </div>
+                                                        @endif
+                                                        <div class="mb-2">
+                                                            <i class="fas fa-graduation-cap me-1"></i>
+                                                            <strong>Jurusan:</strong> {{ $sesi->kelas->jurusan->nama_jurusan }}
+                                                        </div>
+                                                        <div class="mb-2">
+                                                            <i class="fas fa-clock me-1"></i>
+                                                            <strong>Durasi:</strong> {{ $sesi->durasi }}
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Action Buttons -->
+                                                    <div class="mt-3">
+                                                        <div class="btn-group w-100" role="group">
+                                                            <a href="{{ route('jadwal-kelas.show', $sesi->id) }}" class="btn btn-sm btn-outline-info" title="Detail">
+                                                                <i class="fas fa-eye"></i>
+                                                            </a>
+                                                            <a href="{{ route('jadwal-kelas.edit', $sesi->id) }}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                            <form action="{{ route('jadwal-kelas.toggle-active', $sesi->id) }}" method="POST" class="d-inline">
+                                                                @csrf
+                                                                @method('PATCH')
+                                                                <button type="submit" class="btn btn-sm {{ $sesi->is_active ? 'btn-outline-secondary' : 'btn-outline-success' }}" title="{{ $sesi->is_active ? 'Nonaktifkan' : 'Aktifkan' }}">
+                                                                    <i class="fas {{ $sesi->is_active ? 'fa-pause' : 'fa-play' }}"></i>
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+
+                                                    @if($sesi->is_active)
+                                                        <div class="badge bg-success mt-2">
+                                                            <i class="fas fa-star me-1"></i>
+                                                            Jadwal Aktif
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    @endforeach
                 @else
                     <!-- Empty State -->
                     <div class="text-center py-5">
                         <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
                         <h5 class="text-muted">Belum Ada Jadwal Persesi</h5>
-                        <p class="text-muted">Mulai dengan menambahkan jadwal persesi pertama untuk kelas lab.</p>
-                        <a href="{{ route('jadwal-kelas.create') }}" class="btn btn-primary btn-lg">
-                            <i class="fas fa-plus me-2"></i>
-                            Tambah Jadwal Persesi Pertama
-                        </a>
+                        <p class="text-muted">
+                            @auth
+                                @if(auth()->user()->role === 'admin')
+                                    Mulai dengan menambahkan jadwal persesi pertama untuk kelas lab.
+                                @else
+                                    Jadwal persesi belum dibuat oleh administrator.
+                                @endif
+                            @else
+                                Silakan login untuk melihat jadwal persesi.
+                            @endauth
+                        </p>
+                        @auth
+                            @if(auth()->user()->role === 'admin')
+                                <a href="{{ route('jadwal-kelas.create') }}" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-plus me-2"></i>
+                                    Tambah Jadwal Persesi Pertama
+                                </a>
+                            @endif
+                        @endauth
                     </div>
                 @endif
 
@@ -372,6 +415,81 @@
 .btn-group .btn:last-child {
     border-top-right-radius: 0.375rem;
     border-bottom-right-radius: 0.375rem;
+}
+
+/* Styling untuk pemisah hari */
+.day-separator {
+    position: relative;
+    background: linear-gradient(45deg, #17a2b8, #007bff);
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+    animation: pulseGlow 2s infinite;
+}
+
+.day-separator h4 {
+    margin: 0;
+    padding: 15px 30px;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.day-separator .badge {
+    animation: bounce 1s infinite;
+}
+
+@keyframes pulseGlow {
+    0%, 100% {
+        box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+    }
+    50% {
+        box-shadow: 0 6px 20px rgba(23, 162, 184, 0.5);
+    }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-3px);
+    }
+    60% {
+        transform: translateY(-1px);
+    }
+}
+
+hr.day-divider {
+    border: none;
+    height: 2px;
+    background: linear-gradient(to right, transparent, #17a2b8, transparent);
+    margin: 0;
+}
+
+/* Special styling untuk hari ini */
+.today-highlight {
+    background: linear-gradient(45deg, #ffc107, #fd7e14) !important;
+    animation: todayPulse 3s infinite;
+}
+
+@keyframes todayPulse {
+    0%, 100% {
+        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+    }
+    50% {
+        box-shadow: 0 8px 25px rgba(255, 193, 7, 0.6);
+    }
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .day-separator h4 {
+        padding: 10px 20px;
+        font-size: 1.1rem;
+    }
+    
+    .day-separator .badge {
+        font-size: 0.7em;
+    }
 }
 </style>
 @endpush

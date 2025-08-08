@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Authentication System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        }
+        .test-info {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
+        .credentials {
+            background: #f3e5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #9c27b0;
+        }
+        .btn {
+            display: inline-block;
+            background: #4caf50;
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 5px;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background: #45a049;
+        }
+        .btn-primary { background: #2196f3; }
+        .btn-primary:hover { background: #1976d2; }
+        h1 { color: #333; text-align: center; }
+        h2 { color: #555; }
+        .feature-list {
+            background: #e8f5e8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .feature-list ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .feature-list li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔐 QR Authentication System</h1>
+        <div class="test-info">
+            <h2>📱 Sistem Login Staff dengan QR Code + PIN</h2>
+            <p>Sistem autentikasi khusus untuk guru dan administrator menggunakan kombinasi QR Code scan dan PIN 4 digit untuk keamanan berlapis.</p>
+        </div>
+
+        <div class="feature-list">
+            <h3>✨ Fitur Utama:</h3>
+            <ul>
+                <li><strong>Two-Step Authentication:</strong> QR Code scanning + PIN verification</li>
+                <li><strong>Camera Integration:</strong> Real-time QR code scanning menggunakan kamera device</li>
+                <li><strong>Manual Input:</strong> Fallback input manual untuk QR code</li>
+                <li><strong>Role-based Dashboard:</strong> Dashboard berbeda untuk Admin dan Guru</li>
+                <li><strong>Session Management:</strong> Secure session handling dengan auto-logout</li>
+                <li><strong>Responsive Design:</strong> Optimized untuk tablet dan mobile devices</li>
+            </ul>
+        </div>
+
+        <h2>🧪 Test Accounts:</h2>
+        
+        <div class="credentials">
+            <strong>👑 Administrator:</strong><br>
+            QR Code: <code>ADM001</code><br>
+            PIN: <code>1234</code><br>
+            <small>Akses ke admin dashboard dengan full kontrol</small>
+        </div>
+
+        <div class="credentials">
+            <strong>👨‍🏫 Guru 1 - Budi Santoso (Matematika):</strong><br>
+            QR Code: <code>GRU001</code><br>
+            PIN: <code>1111</code>
+        </div>
+
+        <div class="credentials">
+            <strong>👩‍🏫 Guru 2 - Siti Rahayu (Bahasa Indonesia):</strong><br>
+            QR Code: <code>GRU002</code><br>
+            PIN: <code>2222</code>
+        </div>
+
+        <div class="credentials">
+            <strong>👨‍🏫 Guru 3 - Andi Pratama (Fisika):</strong><br>
+            QR Code: <code>GRU003</code><br>
+            PIN: <code>3333</code>
+        </div>
+
+        <div class="credentials">
+            <strong>👩‍🏫 Guru 4 - Dewi Sartika (Kimia):</strong><br>
+            QR Code: <code>GRU004</code><br>
+            PIN: <code>4444</code>
+        </div>
+
+        <div class="credentials">
+            <strong>👨‍🏫 Guru 5 - Rudi Hermawan (Sejarah):</strong><br>
+            QR Code: <code>GRU005</code><br>
+            PIN: <code>5555</code>
+        </div>
+
+        <h2>🚀 Test Links:</h2>
+        <a href="http://127.0.0.1:8081/auth/qr-login" class="btn btn-primary">
+            🔐 Test QR Login System
+        </a>
+        <a href="http://127.0.0.1:8081/absensi" class="btn">
+            📊 Absensi Dashboard
+        </a>
+
+        <div class="test-info" style="margin-top: 30px;">
+            <h3>📋 Cara Testing:</h3>
+            <ol>
+                <li>Klik tombol "Test QR Login System"</li>
+                <li>Pilih "Mulai Scan QR Code" atau masukkan kode QR manual</li>
+                <li>Masukkan salah satu kode QR dari daftar di atas (contoh: <code>ADM001</code>)</li>
+                <li>Sistem akan menampilkan informasi user dan meminta PIN</li>
+                <li>Masukkan PIN yang sesuai (contoh: <code>1234</code> untuk admin)</li>
+                <li>Login berhasil dan akan diredirect ke dashboard sesuai role</li>
+            </ol>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px; color: #666;">
+            <small>
+                🔧 Development server running on port 8081<br>
+                📱 Best viewed on tablet or mobile device for authentic experience
+            </small>
+        </div>
+    </div>
+</body>
+</html>

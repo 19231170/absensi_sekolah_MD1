@@ -11,12 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('jurusan', function (Blueprint $table) {
-            $table->id();
-            $table->string('nama_jurusan');
-            $table->string('kode_jurusan')->unique();
-            $table->text('deskripsi')->nullable();
-            $table->timestamps();
+        Schema::table('kelas', function (Blueprint $table) {
+            $table->text('keterangan')->nullable()->after('kapasitas');
+            $table->boolean('is_active')->default(true)->after('keterangan');
         });
     }
 
@@ -25,6 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('jurusan');
+        Schema::table('kelas', function (Blueprint $table) {
+            $table->dropColumn(['keterangan', 'is_active']);
+        });
     }
 };

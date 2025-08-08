@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\JadwalKelas;
 use App\Models\Kelas;
+use App\Models\Jurusan;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -31,7 +32,31 @@ class JadwalKelasController extends Controller
                        ->orderBy('jam_masuk')
                        ->get();
         
-        // Pisahkan jadwal berdasarkan sesi
+        // Kelompokkan jadwal berdasarkan hari
+        $jadwalPerHari = $jadwal->groupBy('hari');
+        
+        // Urutan hari yang benar
+        $urutanHari = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
+        
+        // Pisahkan jadwal berdasarkan sesi untuk setiap hari dengan urutan yang benar
+        $jadwalTerorganisir = [];
+        foreach ($urutanHari as $namaHari) {
+            if (isset($jadwalPerHari[$namaHari])) {
+                $jadwalHari = $jadwalPerHari[$namaHari];
+                $jadwalTerorganisir[$namaHari] = [
+                    'pagi' => $jadwalHari->filter(function($item) {
+                        $jamMasuk = Carbon::parse($item->jam_masuk)->format('H:i');
+                        return $jamMasuk < '12:00';
+                    }),
+                    'siang' => $jadwalHari->filter(function($item) {
+                        $jamMasuk = Carbon::parse($item->jam_masuk)->format('H:i');
+                        return $jamMasuk >= '12:00';
+                    })
+                ];
+            }
+        }
+        
+        // Untuk backward compatibility, tetap sediakan variabel lama
         $jadwalPagi = $jadwal->filter(function($item) {
             $jamMasuk = Carbon::parse($item->jam_masuk)->format('H:i');
             return $jamMasuk < '12:00';
@@ -69,7 +94,8 @@ class JadwalKelasController extends Controller
         return view('jadwal-kelas.index', compact(
             'jadwal', 
             'jadwalPagi', 
-            'jadwalSiang', 
+            'jadwalSiang',
+            'jadwalTerorganisir',
             'kelas', 
             'hariOptions', 
             'hari', 
@@ -84,6 +110,7 @@ class JadwalKelasController extends Controller
     public function create()
     {
         $kelas = Kelas::with('jurusan')->get();
+        $jurusan = Jurusan::orderBy('nama_jurusan')->get();
         $hariOptions = [
             'senin' => 'Senin',
             'selasa' => 'Selasa',
@@ -93,7 +120,7 @@ class JadwalKelasController extends Controller
             'sabtu' => 'Sabtu'
         ];
         
-        return view('jadwal-kelas.create', compact('kelas', 'hariOptions'));
+        return view('jadwal-kelas.create', compact('kelas', 'jurusan', 'hariOptions'));
     }
 
     /**

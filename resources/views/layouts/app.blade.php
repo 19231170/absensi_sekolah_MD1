@@ -77,6 +77,71 @@
                             <i class="fas fa-qrcode me-1"></i> QR Siswa
                         </a>
                     </li>
+                    
+                    @auth
+                        @if(auth()->user()->role === 'admin')
+                            <!-- Admin Only Links -->
+                            <li class="nav-item">
+                                <a class="nav-link text-danger" href="{{ route('admin.generate-qr') }}">
+                                    <i class="fas fa-shield-alt me-1"></i> Admin QR
+                                </a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-warning" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-shield-alt me-1"></i> Admin
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="{{ route('admin.generate-qr') }}">
+                                            <i class="fas fa-qrcode me-2"></i> Generate QR Admin
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item text-primary" href="{{ route('admin.dashboard') }}">
+                                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard Admin
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <small class="dropdown-item-text text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Akses penuh administrator
+                                        </small>
+                                    </li>
+                                </ul>
+                            </li>
+                        @endif
+                        
+                        <!-- User Info -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-light" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user me-1"></i> {{ auth()->user()->name }}
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{{ auth()->user()->role === 'admin' ? route('admin.dashboard') : route('guru.dashboard') }}">
+                                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="POST" action="{{ route('qr.login.logout') }}" style="display: inline;">
+                                        @csrf
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="fas fa-sign-out-alt me-2"></i> Logout
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    @else
+                        <!-- Login Link -->
+                        <li class="nav-item">
+                            <a class="nav-link text-success" href="{{ route('qr.login.form') }}">
+                                <i class="fas fa-sign-in-alt me-1"></i> Login Staff
+                            </a>
+                        </li>
+                    @endauth
                 </ul>
                 <!-- Real-time Clock -->
                 <div class="navbar-text text-white me-3">
@@ -97,6 +162,13 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        // Setup AJAX CSRF Token
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+        
         // Real-time Clock
         function updateClock() {
             const now = new Date();
