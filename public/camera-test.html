@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        video {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 8px;
+        }
+        
+        .logs {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Camera & QR Scanner Debug</h1>
+    
+    <div class="test-section">
+        <h3>📷 Basic Camera Test</h3>
+        <button class="btn-success" onclick="testBasicCamera()">Test Basic Camera</button>
+        <button class="btn-danger" onclick="stopCamera()">Stop Camera</button>
+        <br><br>
+        <video id="basicVideo" autoplay playsinline muted style="display: none;"></video>
+    </div>
+    
+    <div class="test-section">
+        <h3>📱 HTML5-QRCode Test</h3>
+        <button class="btn-info" onclick="loadHtml5QrCode()">Load HTML5-QRCode</button>
+        <button class="btn-success" onclick="testHtml5QrCode()">Test HTML5-QRCode Scanner</button>
+        <button class="btn-danger" onclick="stopHtml5QrCode()">Stop HTML5-QRCode</button>
+        <br><br>
+        <div id="html5QrReader" style="width: 400px; height: 300px; border: 1px solid #ccc;"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔄 Fallback Scanner Test</h3>
+        <button class="btn-success" onclick="testFallbackScanner()">Test Fallback Scanner</button>
+        <button class="btn-danger" onclick="stopFallbackScanner()">Stop Fallback</button>
+        <br><br>
+        <div id="fallbackReader" style="width: 400px; height: 300px; border: 1px solid #ccc;"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>📋 Debug Logs</h3>
+        <button class="btn-info" onclick="clearLogs()">Clear Logs</button>
+        <div id="logs" class="logs"></div>
+    </div>
+    
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+    <script src="/js/simple-qr-scanner.js"></script>
+    
+    <script>
+        let basicStream = null;
+        let html5QrScanner = null;
+        let fallbackScanner = null;
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('logs');
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+        
+        // Basic Camera Test
+        async function testBasicCamera() {
+            try {
+                log('🔍 Testing basic camera access...');
+                
+                const constraints = {
+                    video: {
+                        facingMode: "environment",
+                        width: { ideal: 1280, min: 640 },
+                        height: { ideal: 720, min: 480 }
+                    }
+                };
+                
+                basicStream = await navigator.mediaDevices.getUserMedia(constraints);
+                const video = document.getElementById('basicVideo');
+                video.srcObject = basicStream;
+                video.style.display = 'block';
+                
+                log('✅ Basic camera working!');
+                
+                // List available cameras
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                log(`📷 Found ${videoDevices.length} video devices:`);
+                videoDevices.forEach((device, index) => {
+                    log(`  ${index + 1}. ${device.label || 'Unknown Camera'} (${device.deviceId})`);
+                });
+                
+            } catch (error) {
+                log(`❌ Basic camera failed: ${error.name} - ${error.message}`);
+            }
+        }
+        
+        function stopCamera() {
+            if (basicStream) {
+                basicStream.getTracks().forEach(track => track.stop());
+                basicStream = null;
+                document.getElementById('basicVideo').style.display = 'none';
+                log('⏹️ Basic camera stopped');
+            }
+        }
+        
+        // HTML5-QRCode Test
+        function loadHtml5QrCode() {
+            if (typeof Html5Qrcode !== 'undefined') {
+                log('✅ HTML5-QRCode library already loaded');
+            } else {
+                log('❌ HTML5-QRCode library not found');
+            }
+        }
+        
+        async function testHtml5QrCode() {
+            try {
+                log('🔍 Testing HTML5-QRCode scanner...');
+                
+                if (typeof Html5Qrcode === 'undefined') {
+                    log('❌ HTML5-QRCode library not loaded');
+                    return;
+                }
+                
+                const cameras = await Html5Qrcode.getCameras();
+                log(`📷 HTML5-QRCode found ${cameras.length} cameras`);
+                
+                if (cameras.length === 0) {
+                    log('❌ No cameras found by HTML5-QRCode');
+                    return;
+                }
+                
+                html5QrScanner = new Html5Qrcode("html5QrReader");
+                
+                const config = {
+                    fps: 10,
+                    qrbox: { width: 200, height: 200 }
+                };
+                
+                await html5QrScanner.start(
+                    cameras[0].id,
+                    config,
+                    (decodedText) => {
+                        log(`✅ QR Code detected: ${decodedText}`);
+                    },
+                    (errorMessage) => {
+                        // Silent error logging for scanning attempts
+                    }
+                );
+                
+                log('✅ HTML5-QRCode scanner started');
+                
+            } catch (error) {
+                log(`❌ HTML5-QRCode failed: ${error.name} - ${error.message}`);
+            }
+        }
+        
+        async function stopHtml5QrCode() {
+            if (html5QrScanner) {
+                try {
+                    await html5QrScanner.stop();
+                    html5QrScanner.clear();
+                    html5QrScanner = null;
+                    log('⏹️ HTML5-QRCode scanner stopped');
+                } catch (error) {
+                    log(`❌ Error stopping HTML5-QRCode: ${error.message}`);
+                }
+            }
+        }
+        
+        // Fallback Scanner Test
+        async function testFallbackScanner() {
+            try {
+                log('🔍 Testing fallback scanner...');
+                
+                if (typeof SimpleQRScanner === 'undefined') {
+                    log('❌ SimpleQRScanner not found');
+                    return;
+                }
+                
+                if (typeof jsQR === 'undefined') {
+                    log('⚠️ jsQR library not found, using demo mode');
+                } else {
+                    log('✅ jsQR library found');
+                }
+                
+                fallbackScanner = new SimpleQRScanner("fallbackReader");
+                
+                await fallbackScanner.start(null, {}, (result) => {
+                    log(`✅ Fallback scanner detected: ${result}`);
+                }, (error) => {
+                    // Silent error logging
+                });
+                
+                log('✅ Fallback scanner started');
+                
+            } catch (error) {
+                log(`❌ Fallback scanner failed: ${error.name} - ${error.message}`);
+            }
+        }
+        
+        async function stopFallbackScanner() {
+            if (fallbackScanner) {
+                try {
+                    await fallbackScanner.stop();
+                    fallbackScanner = null;
+                    log('⏹️ Fallback scanner stopped');
+                } catch (error) {
+                    log(`❌ Error stopping fallback scanner: ${error.message}`);
+                }
+            }
+        }
+        
+        // Initialize
+        log('🚀 Camera debug page loaded');
+        log(`🌐 User Agent: ${navigator.userAgent}`);
+        log(`📱 Platform: ${navigator.platform}`);
+        log(`🔒 HTTPS: ${location.protocol === 'https:'}`);
+        log(`🏠 Localhost: ${location.hostname === 'localhost' || location.hostname === '127.0.0.1'}`);
+    </script>
+</body>
+</html>

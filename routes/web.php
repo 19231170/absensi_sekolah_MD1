@@ -12,6 +12,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
+    if (Auth::check()) {
+        $user = Auth::user();
+        if ($user->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        } else {
+            return redirect()->route('guru.dashboard');
+        }
+    }
     return redirect()->route('qr.login.form');
 });
 
@@ -22,6 +30,11 @@ Route::prefix('auth')->name('qr.login.')->group(function () {
     Route::post('/pin', [QrAuthController::class, 'verifyPin'])->name('pin');
     Route::post('/clear', [QrAuthController::class, 'clearSession'])->name('clear');
     Route::post('/logout', [QrAuthController::class, 'logout'])->name('logout');
+});
+
+// Simplified URL for QR Login
+Route::get('/login/qr', function() {
+    return redirect()->route('qr.login.form');
 });
 
 // Protected Routes - Authenticated Users Only
@@ -42,11 +55,13 @@ Route::middleware(['auth.qr'])->group(function () {
         return view('dashboard.guru', compact('user'));
     })->name('guru.dashboard');
 
-    // Absensi Routes (Admin & Guru)
+    // Absensi Per Pelajaran Routes (Admin & Guru)
     Route::prefix('absensi')->name('absensi.')->group(function () {
-        Route::get('/', [AbsensiController::class, 'index'])->name('index');
-        Route::post('/scan', [AbsensiController::class, 'scanQr'])->name('scan');
         Route::get('/laporan', [AbsensiController::class, 'laporan'])->name('laporan');
+        
+        // Absensi Per Pelajaran Routes
+        Route::get('/pelajaran/{jadwalKelas}', [\App\Http\Controllers\AbsensiPelajaranController::class, 'index'])->name('pelajaran');
+        Route::post('/pelajaran/scan', [\App\Http\Controllers\AbsensiPelajaranController::class, 'scanQr'])->name('pelajaran.scan');
     });
 
     // QR Code Routes (Admin & Guru) - Guru hanya untuk siswa kelasnya
@@ -95,6 +110,23 @@ Route::middleware(['auth.qr'])->group(function () {
             Route::delete('/delete-dummy', [AdminController::class, 'deleteDummyData'])->name('delete-dummy');
             Route::get('/download-qr', [AdminController::class, 'downloadQr'])->name('download-qr');
         });
+        
+        // Siswa Management Routes (Admin Only)
+        Route::resource('siswa', \App\Http\Controllers\SiswaController::class);
+        Route::prefix('siswa')->name('siswa.')->group(function () {
+            Route::get('/import/form', [\App\Http\Controllers\SiswaController::class, 'importForm'])->name('import');
+            Route::post('/import/excel', [\App\Http\Controllers\SiswaController::class, 'importExcel'])->name('import.excel');
+            Route::get('/template/download', [\App\Http\Controllers\SiswaController::class, 'downloadTemplate'])->name('template.download');
+            Route::get('/template/download/excel', [\App\Http\Controllers\SiswaController::class, 'downloadTemplateExcel'])->name('template.download.excel');
+        });
+
+        // Guru Management Routes (Admin Only)
+        Route::resource('guru', \App\Http\Controllers\GuruController::class)->except(['show']);
+        Route::prefix('guru')->name('guru.')->group(function() {
+            Route::get('/{guru}/qr', [\App\Http\Controllers\GuruController::class, 'downloadQr'])->name('qr');
+            Route::get('/download/all/zip', [\App\Http\Controllers\GuruController::class, 'downloadAllZip'])->name('download.all.zip');
+            Route::get('/download/all/pdf', [\App\Http\Controllers\GuruController::class, 'downloadAllPdf'])->name('download.all.pdf');
+        });
     });
 });
 
@@ -103,6 +135,19 @@ if (config('app.debug')) {
     Route::get('/debug', function() {
         return view('debug.index');
     })->name('debug.index');
+    
+    // Debug auth & routes
+    Route::get('/debug-auth', function() {
+        return response()->json([
+            'authenticated' => Auth::check(),
+            'user' => Auth::user(),
+            'role' => Auth::user()?->role ?? 'no user',
+            'routes_exist' => [
+                'jadwal-kelas.index' => route('jadwal-kelas.index'),
+                'jadwal-kelas.create' => Auth::check() && Auth::user()?->role === 'admin' ? route('jadwal-kelas.create') : 'Not accessible - need admin role'
+            ]
+        ]);
+    })->name('debug.auth');
     
     Route::post('/debug/absensi', function(Request $request) {
         return response()->json([
@@ -137,4 +182,16 @@ if (config('app.debug')) {
             'tanggal_raw' => $latestAbsensi ? $latestAbsensi->tanggal : null,
         ]);
     })->name('test.db.timezone');
+    
+    // Test Import View
+    Route::get('/test-import-view', function() {
+        // Set up the session with the correct variables
+        session()->flash('import_errors', [
+            'Row 1: Invalid data',
+            'Row 2: Missing required field'
+        ]);
+        
+        // Render the view
+        return view('siswa.import');
+    })->name('test.import.view');
 }

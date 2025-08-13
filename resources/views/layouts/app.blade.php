@@ -48,7 +48,7 @@
 <body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="{{ route('absensi.index') }}">
+            <a class="navbar-brand" href="@auth{{ auth()->user()->role === 'admin' ? route('admin.dashboard') : route('guru.dashboard') }}@else{{ route('qr.login.form') }}@endauth">
                 <i class="fas fa-qrcode me-2"></i>
                 Sistem Absensi QR
             </a>
@@ -57,11 +57,6 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('absensi.index') }}">
-                            <i class="fas fa-camera me-1"></i> Scan QR
-                        </a>
-                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('jadwal-kelas.index') }}">
                             <i class="fas fa-calendar-alt me-1"></i> Jadwal Persesi
@@ -80,25 +75,34 @@
                     
                     @auth
                         @if(auth()->user()->role === 'admin')
-                            <!-- Admin Only Links -->
-                            <li class="nav-item">
-                                <a class="nav-link text-danger" href="{{ route('admin.generate-qr') }}">
-                                    <i class="fas fa-shield-alt me-1"></i> Admin QR
-                                </a>
-                            </li>
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle text-warning" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fas fa-shield-alt me-1"></i> Admin
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li>
-                                        <a class="dropdown-item text-danger" href="{{ route('admin.generate-qr') }}">
-                                            <i class="fas fa-qrcode me-2"></i> Generate QR Admin
+                                        <a class="dropdown-item text-primary" href="{{ route('admin.dashboard') }}">
+                                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard Admin
                                         </a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item text-primary" href="{{ route('admin.dashboard') }}">
-                                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard Admin
+                                        <a class="dropdown-item text-success" href="{{ route('siswa.index') }}">
+                                            <i class="fas fa-user-graduate me-2"></i> Kelola Siswa
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item text-info" href="{{ route('guru.index') }}">
+                                            <i class="fas fa-chalkboard-teacher me-2"></i> Kelola Guru
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('guru.download.all.zip') }}">
+                                            <i class="fas fa-file-archive me-2"></i> Download QR Guru (ZIP)
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('guru.download.all.pdf') }}">
+                                            <i class="fas fa-file-pdf me-2"></i> Download QR Guru (PDF)
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>

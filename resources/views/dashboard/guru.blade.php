@@ -54,7 +54,7 @@
                 <p class="text-muted mb-3">
                     Scan QR Code siswa untuk membuka pelajaran
                 </p>
-                <a href="{{ route('absensi.index') }}" class="btn btn-info btn-custom">
+                <a href="{{ route('jadwal-kelas.index') }}" class="btn btn-info btn-custom">
                     <i class="fas fa-eye me-2"></i>
                     Buka Absensi
                 </a>

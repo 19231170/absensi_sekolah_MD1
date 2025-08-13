@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner Library Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-loading { background-color: #ffc107; }
+        .status-success { background-color: #28a745; }
+        .status-error { background-color: #dc3545; }
+        .log-container {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin-bottom: 4px;
+            padding: 2px 0;
+        }
+        .log-info { color: #0066cc; }
+        .log-success { color: #28a745; }
+        .log-error { color: #dc3545; }
+        .log-warning { color: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="test-container">
+            <h1 class="mb-4">
+                <i class="fas fa-flask me-2"></i>Scanner Library Test
+            </h1>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Library Status</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <span class="status-indicator status-loading" id="html5-status"></span>
+                                <strong>HTML5-QRCode:</strong>
+                                <span id="html5-text">Loading...</span>
+                            </div>
+                            <div class="mb-3">
+                                <span class="status-indicator status-loading" id="fallback-status"></span>
+                                <strong>Fallback Scanner:</strong>
+                                <span id="fallback-text">Loading...</span>
+                            </div>
+                            <div class="mb-3">
+                                <span class="status-indicator status-loading" id="final-status"></span>
+                                <strong>Final Result:</strong>
+                                <span id="final-text">Testing...</span>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary" id="retest-btn">
+                                    <i class="fas fa-redo me-2"></i>Re-test Libraries
+                                </button>
+                                <button class="btn btn-secondary" id="clear-log-btn">
+                                    <i class="fas fa-trash me-2"></i>Clear Log
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Test Log</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="log-container" id="log-container">
+                                <!-- Log entries will appear here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i>Test Information</h6>
+                    <p class="mb-0">
+                        This page tests the progressive library loading system used in the attendance scanner.
+                        It attempts to load HTML5-QRCode from multiple CDNs and falls back to a simple scanner if needed.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- HTML5-QRCode Library with Multiple CDN Fallbacks -->
+    <script>
+        // Loading system variables
+        let libraryLoadingAttempts = 0;
+        const maxLoadingAttempts = 10;
+        let libraryLoaded = false;
+        let scannerType = 'loading';
+        
+        // CDN URLs to try
+        const cdnUrls = [
+            'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/minified/html5-qrcode.min.js',
+            'https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js'
+        ];
+        
+        let currentCdnIndex = 0;
+        
+        // Logging functions
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = $(`
+                <div class="log-entry log-${type}">
+                    [${timestamp}] ${message}
+                </div>
+            `);
+            $('#log-container').append(logEntry);
+            $('#log-container').scrollTop($('#log-container')[0].scrollHeight);
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function updateStatus(element, status, text) {
+            $(`#${element}-status`).removeClass('status-loading status-success status-error').addClass(`status-${status}`);
+            $(`#${element}-text`).text(text);
+        }
+        
+        // Load HTML5-QRCode library
+        function loadHtml5QrCode() {
+            log('Starting HTML5-QRCode library loading test...', 'info');
+            
+            if (currentCdnIndex >= cdnUrls.length) {
+                log('All CDN URLs failed, loading fallback scanner...', 'warning');
+                updateStatus('html5', 'error', 'All CDNs failed');
+                loadFallbackScanner();
+                return;
+            }
+            
+            const cdnUrl = cdnUrls[currentCdnIndex];
+            log(`Attempting to load from CDN ${currentCdnIndex + 1}: ${cdnUrl}`, 'info');
+            
+            const script = document.createElement('script');
+            script.src = cdnUrl;
+            script.async = true;
+            
+            script.onload = function() {
+                log(`✅ Successfully loaded HTML5-QRCode from CDN ${currentCdnIndex + 1}`, 'success');
+                updateStatus('html5', 'success', `Loaded from CDN ${currentCdnIndex + 1}`);
+                checkLibraryLoaded();
+            };
+            
+            script.onerror = function() {
+                log(`❌ Failed to load from CDN ${currentCdnIndex + 1}`, 'error');
+                currentCdnIndex++;
+                setTimeout(loadHtml5QrCode, 500); // Try next CDN after delay
+            };
+            
+            document.head.appendChild(script);
+        }
+        
+        // Load fallback scanner
+        function loadFallbackScanner() {
+            log('Loading fallback scanner...', 'info');
+            
+            const script = document.createElement('script');
+            script.src = '/js/simple-qr-scanner.js';
+            script.async = true;
+            
+            script.onload = function() {
+                log('✅ Fallback scanner loaded successfully', 'success');
+                updateStatus('fallback', 'success', 'Loaded successfully');
+                finalizeTesting('fallback');
+            };
+            
+            script.onerror = function() {
+                log('❌ Failed to load fallback scanner', 'error');
+                updateStatus('fallback', 'error', 'Failed to load');
+                finalizeTesting('none');
+            };
+            
+            document.head.appendChild(script);
+        }
+        
+        // Check if HTML5-QRCode library is loaded
+        function checkLibraryLoaded() {
+            if (typeof Html5Qrcode !== 'undefined') {
+                libraryLoaded = true;
+                scannerType = 'html5-qrcode';
+                log('✅ HTML5-QRCode library ready for use', 'success');
+                updateStatus('fallback', 'success', 'Not needed (HTML5-QRCode available)');
+                finalizeTesting('html5-qrcode');
+                return true;
+            }
+            return false;
+        }
+        
+        // Wait for library to load with progressive checking
+        function waitForLibrary() {
+            if (checkLibraryLoaded()) {
+                return;
+            }
+            
+            libraryLoadingAttempts++;
+            
+            if (libraryLoadingAttempts <= maxLoadingAttempts) {
+                log(`Checking library status... (${libraryLoadingAttempts}/${maxLoadingAttempts})`, 'info');
+                setTimeout(waitForLibrary, 500); // Check every 500ms
+            } else {
+                log('❌ HTML5-QRCode library failed to load after maximum attempts', 'error');
+                updateStatus('html5', 'error', 'Loading timeout');
+                loadFallbackScanner();
+            }
+        }
+        
+        // Finalize testing
+        function finalizeTesting(finalType) {
+            scannerType = finalType;
+            libraryLoaded = (finalType !== 'none');
+            
+            if (finalType === 'html5-qrcode') {
+                updateStatus('final', 'success', 'HTML5-QRCode Ready');
+                log('🎉 Test completed: HTML5-QRCode scanner is ready!', 'success');
+            } else if (finalType === 'fallback') {
+                updateStatus('final', 'success', 'Fallback Scanner Ready');
+                log('🎉 Test completed: Fallback scanner is ready!', 'warning');
+            } else {
+                updateStatus('final', 'error', 'No scanner available');
+                log('💥 Test failed: No scanner libraries available!', 'error');
+            }
+            
+            // Callback to simulate the actual page behavior
+            if (typeof window.scannerLibraryLoaded === 'function') {
+                window.scannerLibraryLoaded(finalType);
+            }
+        }
+        
+        // Reset and rerun test
+        function runTest() {
+            // Reset variables
+            libraryLoadingAttempts = 0;
+            currentCdnIndex = 0;
+            libraryLoaded = false;
+            scannerType = 'loading';
+            
+            // Reset UI
+            updateStatus('html5', 'loading', 'Loading...');
+            updateStatus('fallback', 'loading', 'Waiting...');
+            updateStatus('final', 'loading', 'Testing...');
+            
+            // Clear any existing scripts
+            $('script[src*="html5-qrcode"]').remove();
+            $('script[src*="simple-qr-scanner"]').remove();
+            
+            // Remove global variables if they exist
+            if (typeof Html5Qrcode !== 'undefined') {
+                delete window.Html5Qrcode;
+            }
+            if (typeof SimpleQRScanner !== 'undefined') {
+                delete window.SimpleQRScanner;
+            }
+            
+            log('🔄 Starting new test...', 'info');
+            
+            // Start the loading process
+            loadHtml5QrCode();
+            
+            // Start progressive checking after a brief delay
+            setTimeout(waitForLibrary, 1000);
+        }
+        
+        // Event handlers
+        $(document).ready(function() {
+            log('Scanner Library Test initialized', 'info');
+            
+            $('#retest-btn').click(runTest);
+            $('#clear-log-btn').click(function() {
+                $('#log-container').empty();
+                log('Log cleared', 'info');
+            });
+            
+            // Start initial test
+            runTest();
+        });
+    </script>
+</body>
+</html>

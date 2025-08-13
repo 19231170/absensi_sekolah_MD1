@@ -50,9 +50,9 @@
                             </li>
                         </ul>
                     </div>
-                    <a href="{{ route('absensi.scan') }}" class="btn btn-outline-light">
-                        <i class="fas fa-camera me-1"></i>
-                        Kembali ke Scan
+                    <a href="{{ route('jadwal-kelas.index') }}" class="btn btn-outline-light">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        Lihat Jadwal
                     </a>
                 </div>
             </div>

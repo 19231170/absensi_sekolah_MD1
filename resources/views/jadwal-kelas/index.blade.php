@@ -112,6 +112,24 @@
                                         <div class="col-md-4 mb-3">
                                             <div class="card border-primary {{ $sesi->is_active ? 'bg-primary-subtle' : 'bg-light' }}">
                                                 <div class="card-body">
+                                                    @php
+                                                        $now = \Carbon\Carbon::now('Asia/Jakarta');
+                                                        $jamMasuk = \Carbon\Carbon::parse($sesi->jam_masuk);
+                                                        $jamKeluar = \Carbon\Carbon::parse($sesi->jam_keluar);
+                                                        $isJadwalHariIni = $namaHari == $hariHariIni;
+                                                        $isWaktuPelajaran = $now->between($jamMasuk->copy()->subMinutes(15), $jamKeluar->copy()->addMinutes(15));
+                                                        $canAbsenNow = $isJadwalHariIni && $isWaktuPelajaran && $sesi->is_active;
+                                                    @endphp
+                                                    
+                                                    @if($canAbsenNow)
+                                                        <div class="mb-3 text-center">
+                                                            <a href="{{ route('absensi.pelajaran', $sesi->id) }}" class="btn btn-success btn-sm w-100 pulse-animation">
+                                                                <i class="fas fa-qrcode me-1"></i>
+                                                                <strong> ABSEN SEKARANG</strong>
+                                                            </a>
+                                                        </div>
+                                                    @endif
+                                                    
                                                     <h6 class="card-title d-flex justify-content-between align-items-center">
                                                         <span>
                                                             @if($sesi->is_active)
@@ -203,6 +221,24 @@
                                         <div class="col-md-4 mb-3">
                                             <div class="card border-warning {{ $sesi->is_active ? 'bg-warning-subtle' : 'bg-light' }}">
                                                 <div class="card-body">
+                                                    @php
+                                                        $now = \Carbon\Carbon::now('Asia/Jakarta');
+                                                        $jamMasuk = \Carbon\Carbon::parse($sesi->jam_masuk);
+                                                        $jamKeluar = \Carbon\Carbon::parse($sesi->jam_keluar);
+                                                        $isJadwalHariIni = $namaHari == $hariHariIni;
+                                                        $isWaktuPelajaran = $now->between($jamMasuk->copy()->subMinutes(15), $jamKeluar->copy()->addMinutes(15));
+                                                        $canAbsenNow = $isJadwalHariIni && $isWaktuPelajaran && $sesi->is_active;
+                                                    @endphp
+                                                    
+                                                    @if($canAbsenNow)
+                                                        <div class="mb-3 text-center">
+                                                            <a href="{{ route('absensi.pelajaran', $sesi->id) }}" class="btn btn-success btn-sm w-100 pulse-animation">
+                                                                <i class="fas fa-qrcode me-1"></i>
+                                                                <strong>🔥 ABSEN SEKARANG</strong>
+                                                            </a>
+                                                        </div>
+                                                    @endif
+                                                    
                                                     <h6 class="card-title d-flex justify-content-between align-items-center">
                                                         <span>
                                                             @if($sesi->is_active)
@@ -311,7 +347,7 @@
                 <!-- Quick Action -->
                 @if($jadwal->count() > 0)
                 <div class="text-center mt-4">
-                    <a href="{{ route('absensi.index') }}" class="btn btn-primary btn-lg">
+                    <a href="{{ route('jadwal-kelas.index') }}" class="btn btn-primary btn-lg">
                         <i class="fas fa-qrcode me-2"></i>
                         Mulai Absensi
                     </a>
@@ -469,6 +505,26 @@ hr.day-divider {
 .today-highlight {
     background: linear-gradient(45deg, #ffc107, #fd7e14) !important;
     animation: todayPulse 3s infinite;
+}
+
+.pulse-animation {
+    animation: pulse-glow 2s infinite;
+    box-shadow: 0 0 20px rgba(40, 167, 69, 0.6);
+}
+
+@keyframes pulse-glow {
+    0% {
+        box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(40, 167, 69, 0.8);
+        transform: scale(1.02);
+    }
+    100% {
+        box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
+        transform: scale(1);
+    }
 }
 
 @keyframes todayPulse {

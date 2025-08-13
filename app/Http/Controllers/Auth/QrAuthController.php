@@ -153,7 +153,7 @@ class QrAuthController extends Controller
         return match($user->role) {
             'admin' => route('admin.dashboard'),
             'guru' => route('guru.dashboard'),
-            default => route('absensi.index')
+            default => route('jadwal-kelas.index')
         };
     }
 

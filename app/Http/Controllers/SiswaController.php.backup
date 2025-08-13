@@ -1,0 +1,202 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Siswa;
+use App\Models\Kelas;
+use App\Models\Jurusan;
+use App\Imports\SiswaImport;
+use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
+
+class SiswaController extends Controller
+{
+    /**
+     * Display a listing of the siswa.
+     */
+    public function index()
+    {
+        $siswa = Siswa::with('kelas.jurusan')->orderBy('nama')->get();
+        return view('siswa.index', compact('siswa'));
+    }
+
+    /**
+     * Show the form for creating a new siswa.
+     */
+    public function create()
+    {
+        $kelas = Kelas::with('jurusan')->get();
+        return view('siswa.create', compact('kelas'));
+    }
+
+    /**
+     * Store a newly created siswa in storage.
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'nis' => 'required|string|unique:siswa,nis',
+            'nama' => 'required|string|max:255',
+            'jenis_kelamin' => 'required|in:L,P',
+            'tanggal_lahir' => 'nullable|date',
+            'alamat' => 'nullable|string',
+            'nomor_hp' => 'nullable|string|max:15',
+            'kelas_id' => 'required|exists:kelas,id',
+            'status_aktif' => 'boolean'
+        ]);
+
+        // Generate QR Code
+        $qrCode = Siswa::generateQrCode();
+
+        $siswa = new Siswa([
+            'nis' => $request->nis,
+            'nama' => $request->nama,
+            'jenis_kelamin' => $request->jenis_kelamin,
+            'tanggal_lahir' => $request->tanggal_lahir,
+            'alamat' => $request->alamat,
+            'nomor_hp' => $request->nomor_hp,
+            'kelas_id' => $request->kelas_id,
+            'qr_code' => $qrCode,
+            'status_aktif' => $request->has('status_aktif') ? true : false
+        ]);
+
+        $siswa->save();
+
+        return redirect()->route('siswa.index')
+            ->with('success', 'Siswa berhasil ditambahkan!');
+    }
+
+    /**
+     * Display the specified siswa.
+     */
+    public function show($nis)
+    {
+        $siswa = Siswa::with('kelas.jurusan')->findOrFail($nis);
+        return view('siswa.show', compact('siswa'));
+    }
+
+    /**
+     * Show the form for editing the specified siswa.
+     */
+    public function edit($nis)
+    {
+        $siswa = Siswa::findOrFail($nis);
+        $kelas = Kelas::with('jurusan')->get();
+        
+        return view('siswa.edit', compact('siswa', 'kelas'));
+    }
+
+    /**
+     * Update the specified siswa in storage.
+     */
+    public function update(Request $request, $nis)
+    {
+        $request->validate([
+            'nama' => 'required|string|max:255',
+            'jenis_kelamin' => 'required|in:L,P',
+            'tanggal_lahir' => 'nullable|date',
+            'alamat' => 'nullable|string',
+            'nomor_hp' => 'nullable|string|max:15',
+            'kelas_id' => 'required|exists:kelas,id',
+            'status_aktif' => 'boolean'
+        ]);
+
+        $siswa = Siswa::findOrFail($nis);
+        $siswa->nama = $request->nama;
+        $siswa->jenis_kelamin = $request->jenis_kelamin;
+        $siswa->tanggal_lahir = $request->tanggal_lahir;
+        $siswa->alamat = $request->alamat;
+        $siswa->nomor_hp = $request->nomor_hp;
+        $siswa->kelas_id = $request->kelas_id;
+        $siswa->status_aktif = $request->has('status_aktif') ? true : false;
+        $siswa->save();
+
+        return redirect()->route('siswa.index')
+            ->with('success', 'Data siswa berhasil diupdate!');
+    }
+
+    /**
+     * Remove the specified siswa from storage.
+     */
+    public function destroy($nis)
+    {
+        $siswa = Siswa::findOrFail($nis);
+        $siswa->delete();
+
+        return redirect()->route('siswa.index')
+            ->with('success', 'Siswa berhasil dihapus!');
+    }
+
+    /**
+     * Show form for importing students from Excel.
+     */
+    public function importForm()
+    {
+        return view('siswa.import');
+    }
+
+    /**
+     * Import students from Excel file.
+     */
+    public function importExcel(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xls,xlsx,csv'
+        ]);
+
+        $file = $request->file('file');
+        
+        try {
+            $import = new SiswaImport();
+            $result = $import->import($file->getRealPath());
+
+            $message = "Import selesai: {$result['success']} siswa berhasil diimport";
+            
+            if ($result['failed'] > 0) {
+                $message .= ", {$result['failed']} siswa gagal diimport.";
+                return redirect()->route('siswa.import')
+                    ->with('warning', $message)
+                    ->with('errors', $result['errors']);
+            }
+            
+            return redirect()->route('siswa.index')
+                ->with('success', $message);
+                
+        } catch (\Exception $e) {
+            return redirect()->route('siswa.import')
+                ->with('error', 'Error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download Excel template for student import.
+     * This is a simple CSV implementation that doesn't rely on Excel package
+     */
+    public function downloadTemplate()
+    {
+        // Create a simple CSV file as template
+        $filename = "Template_Siswa.csv";
+        
+        // CSV header
+        $header = [
+            'nis', 'nama', 'tingkat', 'kelas', 'jurusan',
+            'jenis_kelamin', 'tanggal_lahir', 'alamat', 'nomor_hp'
+        ];
+        
+        // Example data row
+        $exampleRow = [
+            '12345678', 'Nama Siswa', 'X', 'A', 'TKJ',
+            'L', '01/01/2008', 'Jl. Contoh No. 123', '081234567890'
+        ];
+        
+        // Create CSV content
+        $csvContent = implode(',', $header) . "\n";
+        $csvContent .= implode(',', $exampleRow);
+        
+        // Return as download
+        return response($csvContent)
+            ->header('Content-Type', 'text/csv')
+            ->header('Content-Disposition', 'attachment; filename="'.$filename.'"');
+    }
+}

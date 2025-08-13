@@ -52,7 +52,7 @@
                         </h5>
                         
                         <div class="qr-code-container mb-3">
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={{ urlencode(route('admin.dashboard', ['token' => $adminToken])) }}" 
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&bgcolor=4CAF50&color=FFFFFF&data={{ urlencode(route('admin.dashboard', ['token' => $adminToken])) }}" 
                                  alt="Admin QR Code" 
                                  class="img-fluid border rounded shadow"
                                  style="max-width: 250px;">

@@ -88,7 +88,10 @@
                             <h6 class="text-muted mb-3">Scan QR Code ini untuk login</h6>
                             
                             <div class="qr-container">
-                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={{ urlencode($user->qr_code) }}" 
+                                @php
+                                    $backgroundColor = $user->role === 'admin' ? '4CAF50' : '2196F3'; // Green for admin, Blue for guru
+                                @endphp
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&bgcolor={{ $backgroundColor }}&color=FFFFFF&data={{ urlencode($user->qr_code) }}" 
                                      alt="QR Code {{ $user->name }}" 
                                      class="qr-image img-fluid">
                                 <div class="qr-overlay">

@@ -3,7 +3,7 @@
 @section('title', 'Login QR Code - Staff')
 
 @section('content')
-<div class="row justify-content-center">
+<div class="row justify-content-center" id="login-wrapper">
     <div class="col-md-6">
         <div class="card card-custom">
             <div class="card-header bg-primary text-white text-center">
@@ -28,47 +28,38 @@
                     </div>
 
                     <!-- Scanner Container -->
+                    <div id="scanner-container" class="d-none mb-4">
+                        <div class="scanner-wrapper mb-3">
+                            <video id="qr-video" playsinline></video>
+                            <canvas id="qr-canvas" class="d-none"></canvas>
+                            
+                            <div class="qr-scanner-overlay">
+                                <div class="qr-scanner-box">
+                                    <div class="qr-corner qr-corner-top-left"></div>
+                                    <div class="qr-corner qr-corner-top-right"></div>
+                                    <div class="qr-corner qr-corner-bottom-left"></div>
+                                    <div class="qr-corner qr-corner-bottom-right"></div>
+                                    <div class="qr-scanner-line"></div>
+                                </div>
+                                <div class="qr-scanner-text">
+                                    <p id="scanner-status">Arahkan QR Code ke dalam kotak</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="button" class="btn btn-danger" id="stopScan">
+                                <i class="fas fa-stop-circle me-2"></i> Berhenti Scan
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="qr-scanner-container">
                         <div class="text-center mb-3">
                             <button type="button" class="btn btn-primary btn-custom" id="startScan">
                                 <i class="fas fa-camera me-2"></i>
                                 Mulai Scan QR Code
                             </button>
-                            <button type="button" class="btn btn-danger btn-custom d-none" id="stopScan">
-                                <i class="fas fa-stop me-2"></i>
-                                Stop Scan
-                            </button>
-                        </div>
-
-                        <!-- Video untuk kamera -->
-                        <div id="scanner-container" class="d-none">
-                            <div class="scanner-wrapper position-relative">
-                                <video id="qr-video" class="w-100 rounded" style="max-height: 300px; object-fit: cover;"></video>
-                                <!-- QR Scanner Overlay -->
-                                <div class="qr-scanner-overlay">
-                                    <div class="qr-scanner-box">
-                                        <div class="qr-corner qr-corner-top-left"></div>
-                                        <div class="qr-corner qr-corner-top-right"></div>
-                                        <div class="qr-corner qr-corner-bottom-left"></div>
-                                        <div class="qr-corner qr-corner-bottom-right"></div>
-                                        <div class="qr-scanner-line"></div>
-                                        <!-- QR Code guide lines -->
-                                        <div class="qr-guide-lines">
-                                            <div class="guide-line guide-line-h"></div>
-                                            <div class="guide-line guide-line-v"></div>
-                                        </div>
-                                    </div>
-                                    <div class="qr-scanner-text">
-                                        <p class="text-white text-center mb-1">
-                                            <span id="scanner-status">Arahkan QR Code ke dalam kotak</span>
-                                        </p>
-                                        <small class="text-white-50 text-center">
-                                            <span id="scanner-tips">Pastikan QR Code terlihat jelas</span>
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
-                            <canvas id="qr-canvas" class="d-none"></canvas>
                         </div>
 
                         <!-- Manual Input -->
@@ -294,49 +285,35 @@
     border-radius: 12px;
 }
 
-/* QR Code guide lines for better positioning */
-.qr-guide-lines {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 80%;
-    height: 80%;
-    pointer-events: none;
-}
-
-.guide-line {
-    position: absolute;
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 1px;
-}
-
-.guide-line-h {
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 1px;
-    transform: translateY(-50%);
-}
-
-.guide-line-v {
-    left: 50%;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    transform: translateX(-50%);
-}
-
 /* Torch button styles */
 #toggleTorch {
     transition: all 0.3s ease;
     backdrop-filter: blur(10px);
     border: 2px solid rgba(255,255,255,0.3);
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 30px;
+    font-size: 14px;
+    cursor: pointer;
+    z-index: 15;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #toggleTorch:hover {
-    transform: translateY(-2px);
+    transform: translateX(-50%) translateY(-2px);
     box-shadow: 0 4px 15px rgba(255,255,255,0.2);
+}
+
+#toggleTorch.active {
+    background: rgba(255, 255, 136, 0.3);
 }
 
 /* User Welcome Card */
@@ -435,24 +412,8 @@
     }
     
     @keyframes scanLine {
-        0% { 
-            top: 10px; 
-            opacity: 0; 
-            transform: scaleX(0.5);
-        }
-        25% { 
-            opacity: 1; 
-            transform: scaleX(1);
-        }
-        75% { 
-            opacity: 1; 
-            transform: scaleX(1);
-        }
-        100% { 
-            top: 180px; 
-            opacity: 0; 
-            transform: scaleX(0.5);
-        }
+        0% { top: 10px; opacity: 0; }
+        100% { top: 180px; opacity: 0; }
     }
     
     #qr-video {
@@ -469,10 +430,6 @@
         height: 50px;
         letter-spacing: 6px;
     }
-    
-    .qr-scanner-text p {
-        font-size: 14px;
-    }
 }
 
 @media (max-width: 480px) {
@@ -488,24 +445,8 @@
     }
     
     @keyframes scanLine {
-        0% { 
-            top: 8px; 
-            opacity: 0; 
-            transform: scaleX(0.5);
-        }
-        25% { 
-            opacity: 1; 
-            transform: scaleX(1);
-        }
-        75% { 
-            opacity: 1; 
-            transform: scaleX(1);
-        }
-        100% { 
-            top: 165px; 
-            opacity: 0; 
-            transform: scaleX(0.5);
-        }
+        0% { top: 8px; opacity: 0; }
+        100% { top: 165px; opacity: 0; }
     }
     
     #qr-video {
@@ -518,40 +459,9 @@
         letter-spacing: 4px;
     }
     
-    .qr-scanner-text p {
-        font-size: 13px;
-    }
-    
     .btn-custom {
         padding: 10px 20px;
         font-size: 14px;
-    }
-}
-
-/* High DPI displays */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    .qr-scanner-line {
-        height: 4px;
-    }
-    
-    .qr-corner {
-        border-width: 5px;
-    }
-}
-
-/* Landscape orientation optimizations */
-@media (orientation: landscape) and (max-height: 500px) {
-    .qr-scanner-box {
-        width: 160px;
-        height: 160px;
-    }
-    
-    #qr-video {
-        max-height: 200px;
-    }
-    
-    .step-container {
-        min-height: 300px;
     }
 }
 
@@ -568,8 +478,10 @@
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <script>
 $(document).ready(function() {
-    let scanner = null;
+    // Variables
+    let videoStream = null;
     let scanning = false;
+    let animationId = null;
     
     // Setup CSRF token for AJAX
     $.ajaxSetup({
@@ -580,7 +492,7 @@ $(document).ready(function() {
 
     // Start QR Scanner
     $('#startScan').click(function() {
-        startQRScanner();
+        initQRScanner();
     });
 
     // Stop QR Scanner
@@ -630,185 +542,285 @@ $(document).ready(function() {
     // Only allow numbers in PIN input
     $('#pin-input').on('input', function() {
         this.value = this.value.replace(/[^0-9]/g, '');
+        if (this.value.length > 4) {
+            this.value = this.value.substring(0, 4);
+        }
     });
 
-    function startQRScanner() {
+    // Check for camera permissions on page load
+    checkCameraPermissions();
+
+    // Initialize QR Scanner with enhanced camera access
+    function initQRScanner() {
+        const video = document.getElementById('qr-video');
+        const canvas = document.getElementById('qr-canvas');
+        
+        // Show scanner container
+        $('#scanner-container').removeClass('d-none');
+        $('#startScan').addClass('d-none');
+        
+        // Enhanced camera constraints with fallbacks
+        const constraints = {
+            video: { 
+                facingMode: { ideal: "environment" },  // Prefer back camera
+                width: { ideal: 1280, max: 1920 },     // Good resolution
+                height: { ideal: 720, max: 1080 },
+                frameRate: { ideal: 60, max: 60 }      // Smooth scanning
+            }
+        };
+        
+        showAlert('info', '<i class="fas fa-spinner fa-spin me-2"></i>Mengakses kamera...', false);
+        
+        // Request camera access with proper error handling
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(function(stream) {
+                console.log('Camera stream obtained successfully');
+                
+                videoStream = stream;
+                video.srcObject = stream;
+                video.setAttribute("playsinline", true); // required for iOS
+                
+                // Wait for video to be ready
+                video.onloadedmetadata = function() {
+                    console.log('Video metadata loaded');
+                    video.play()
+                        .then(() => {
+                            console.log('Video playing successfully');
+                            scanning = true;
+                            
+                            // Check for torch support
+                            checkTorchSupport(stream);
+                            
+                            // Start scanning loop
+                            scanQRCode();
+                            
+                            showAlert('success', 'Kamera aktif! Arahkan QR Code ke dalam kotak hijau.', true);
+                        })
+                        .catch(err => {
+                            console.error('Error playing video:', err);
+                            showAlert('danger', 'Tidak dapat memutar video kamera.', false);
+                            stopQRScanner();
+                        });
+                };
+                
+                // Handle video errors
+                video.onerror = function(err) {
+                    console.error('Video error:', err);
+                    showAlert('danger', 'Terjadi error pada video kamera.', false);
+                    stopQRScanner();
+                };
+                
+            })
+            .catch(function(err) {
+                console.error("Error accessing camera: ", err);
+                let errorMsg = 'Tidak dapat mengakses kamera. ';
+                
+                if (err.name === 'NotAllowedError') {
+                    errorMsg += 'Silakan izinkan akses kamera di browser dan refresh halaman.';
+                } else if (err.name === 'NotFoundError') {
+                    errorMsg += 'Kamera tidak ditemukan pada perangkat ini.';
+                } else if (err.name === 'NotReadableError') {
+                    errorMsg += 'Kamera sedang digunakan oleh aplikasi lain.';
+                } else if (err.name === 'OverconstrainedError') {
+                    errorMsg += 'Konfigurasi kamera tidak didukung. Mencoba dengan pengaturan yang lebih sederhana...';
+                    
+                    // Try with simpler constraints
+                    trySimpleCamera();
+                    return;
+                } else {
+                    errorMsg += 'Error: ' + err.message;
+                }
+                
+                $('#scanner-container').addClass('d-none');
+                $('#startScan').removeClass('d-none');
+                
+                showAlert('danger', errorMsg, false);
+            });
+    }
+
+    // Try with simpler camera constraints as fallback
+    function trySimpleCamera() {
+        const video = document.getElementById('qr-video');
+        
+        const simpleConstraints = {
+            video: true  // Basic video access
+        };
+        
+        navigator.mediaDevices.getUserMedia(simpleConstraints)
+            .then(function(stream) {
+                console.log('Simple camera access successful');
+                
+                videoStream = stream;
+                video.srcObject = stream;
+                video.setAttribute("playsinline", true);
+                
+                video.onloadedmetadata = function() {
+                    video.play()
+                        .then(() => {
+                            scanning = true;
+                            scanQRCode();
+                            showAlert('success', 'Kamera aktif (mode sederhana)! Arahkan QR Code ke kamera.', true);
+                        })
+                        .catch(err => {
+                            console.error('Error playing simple video:', err);
+                            showAlert('danger', 'Tidak dapat memutar video kamera.', false);
+                            stopQRScanner();
+                        });
+                };
+            })
+            .catch(function(err) {
+                console.error("Simple camera access failed: ", err);
+                $('#scanner-container').addClass('d-none');
+                $('#startScan').removeClass('d-none');
+                showAlert('danger', 'Tidak dapat mengakses kamera dengan pengaturan apapun.', false);
+            });
+    }
+
+    // Enhanced QR Code scanning with better error handling
+    function scanQRCode() {
+        if (!scanning) return;
+        
         const video = document.getElementById('qr-video');
         const canvas = document.getElementById('qr-canvas');
         const context = canvas.getContext('2d');
         
-        // Enhanced camera constraints for better QR detection
-        const constraints = {
-            video: {
-                facingMode: { ideal: "environment" },
-                width: { ideal: 1920, min: 640 },
-                height: { ideal: 1080, min: 480 },
-                frameRate: { ideal: 30, min: 15 },
-                focusMode: "continuous",
-                exposureMode: "continuous",
-                whiteBalanceMode: "continuous"
-            }
-        };
-        
-        navigator.mediaDevices.getUserMedia(constraints)
-        .then(function(stream) {
-            video.srcObject = stream;
-            video.play();
-            scanning = true;
-            
-            // Apply advanced camera settings if supported
-            const track = stream.getVideoTracks()[0];
-            if (track.getCapabilities) {
-                const capabilities = track.getCapabilities();
-                const settings = {};
-                
-                // Set optimal focus for QR scanning
-                if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-                    settings.focusMode = 'continuous';
-                }
-                if (capabilities.exposureMode && capabilities.exposureMode.includes('continuous')) {
-                    settings.exposureMode = 'continuous';
-                }
-                if (capabilities.torch) {
-                    // Enable torch/flashlight if available
-                    settings.torch = false; // Start with torch off
-                }
-                
-                if (Object.keys(settings).length > 0) {
-                    track.applyConstraints({ advanced: [settings] }).catch(console.warn);
-                }
-            }
-            
-            $('#startScan').addClass('d-none');
-            $('#stopScan').removeClass('d-none');
-            $('#scanner-container').removeClass('d-none');
-            
-            // Add torch toggle button if supported
-            addTorchButton(stream);
-            
-            video.addEventListener('loadedmetadata', function() {
-                // Optimize video display for better scanning
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                scanQRCode(video, canvas, context);
-            });
-            
-            showAlert('info', 'Kamera aktif! Arahkan QR Code staff ke dalam kotak hijau.', true);
-        })
-        .catch(function(err) {
-            console.error("Error accessing camera: ", err);
-            let errorMsg = 'Tidak dapat mengakses kamera. ';
-            
-            if (err.name === 'NotAllowedError') {
-                errorMsg += 'Silakan izinkan akses kamera di browser.';
-            } else if (err.name === 'NotFoundError') {
-                errorMsg += 'Kamera tidak ditemukan.';
-            } else if (err.name === 'NotReadableError') {
-                errorMsg += 'Kamera sedang digunakan aplikasi lain.';
-            } else {
-                errorMsg += 'Pastikan kamera tersedia dan izin diberikan.';
-            }
-            
-            showAlert('danger', errorMsg);
-        });
-    }
-
-    function stopQRScanner() {
-        const video = document.getElementById('qr-video');
-        
-        if (video.srcObject) {
-            video.srcObject.getTracks().forEach(track => track.stop());
+        // Make sure video is ready
+        if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+            animationId = requestAnimationFrame(scanQRCode);
+            return;
         }
         
-        scanning = false;
-        $('#startScan').removeClass('d-none');
-        $('#stopScan').addClass('d-none');
-        $('#scanner-container').addClass('d-none');
-    }
-
-    function scanQRCode(video, canvas, context) {
-        if (!scanning) return;
-        
-        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        try {
             // Set canvas dimensions to match video
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             
-            // Draw current frame
+            // Draw current frame to canvas
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            // Get image data for QR detection
+            // Get image data
             const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
             
-            // Enhanced QR detection with multiple attempts
-            let code = null;
-            
-            // Try normal detection first
-            code = jsQR(imageData.data, imageData.width, imageData.height, {
-                inversionAttempts: "attemptBoth"
+            // Try to find QR code with enhanced settings
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "attemptBoth",  // Try both normal and inverted
+                locateAttempts: 10,               // More location attempts
+                minSize: 50                       // Minimum QR code size
             });
             
-            // If not found, try with different scan regions (center focus)
-            if (!code && canvas.width > 400 && canvas.height > 400) {
-                const centerW = canvas.width * 0.6;
-                const centerH = canvas.height * 0.6;
-                const offsetX = (canvas.width - centerW) / 2;
-                const offsetY = (canvas.height - centerH) / 2;
-                
-                const centerData = context.getImageData(offsetX, offsetY, centerW, centerH);
-                code = jsQR(centerData.data, centerData.width, centerData.height, {
-                    inversionAttempts: "attemptBoth"
-                });
-            }
-            
-            // If still not found, try with image enhancement
-            if (!code) {
-                enhanceImageAndScan(context, canvas, imageData);
-            }
-            
-            if (code) {
-                $('#scanner-status').text('QR Code terdeteksi! Memproses...');
+            // If QR code found
+            if (code && code.data && code.data.trim()) {
+                console.log('QR Code detected:', code.data);
                 
                 // Visual and audio feedback
                 playSuccessSound();
                 flashSuccess();
                 
-                processQRCode(code.data);
+                // Process the code
+                processQRCode(code.data.trim());
+                
+                // Stop scanning
                 stopQRScanner();
                 return;
-            } else {
-                // Provide scanning guidance
-                $('#scanner-status').text('Mencari QR Code...');
             }
-        }
-        
-        // Continue scanning with optimal frame rate
-        requestAnimationFrame(() => scanQRCode(video, canvas, context));
-    }
-    
-    function enhanceImageAndScan(context, canvas, originalData) {
-        // Create enhanced version with better contrast
-        const enhancedData = context.createImageData(canvas.width, canvas.height);
-        const data = enhancedData.data;
-        const original = originalData.data;
-        
-        for (let i = 0; i < original.length; i += 4) {
-            // Convert to grayscale and enhance contrast
-            const gray = 0.299 * original[i] + 0.587 * original[i + 1] + 0.114 * original[i + 2];
-            const enhanced = gray > 128 ? 255 : 0; // High contrast threshold
             
-            data[i] = enhanced;     // R
-            data[i + 1] = enhanced; // G
-            data[i + 2] = enhanced; // B
-            data[i + 3] = 255;      // A
+        } catch (error) {
+            console.error('Error during QR scanning:', error);
         }
         
-        // Try scanning the enhanced image
-        return jsQR(data, canvas.width, canvas.height, {
-            inversionAttempts: "attemptBoth"
-        });
+        // Continue scanning
+        animationId = requestAnimationFrame(scanQRCode);
+    }
+
+    // Stop QR Scanner with proper cleanup
+    function stopQRScanner() {
+        scanning = false;
+        
+        // Cancel animation frame
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+        
+        // Stop all video tracks
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => {
+                track.stop();
+                console.log('Video track stopped:', track.label);
+            });
+            videoStream = null;
+        }
+        
+        // Clear video element
+        const video = document.getElementById('qr-video');
+        if (video) {
+            video.srcObject = null;
+        }
+        
+        // Remove torch button if it exists
+        $('#toggleTorch').remove();
+        
+        // Reset UI
+        $('#scanner-container').addClass('d-none');
+        $('#startScan').removeClass('d-none');
+        
+        console.log('QR Scanner stopped and cleaned up');
     }
     
+    // Check for camera permissions
+    function checkCameraPermissions() {
+        if (navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: 'camera' })
+                .then(function(permissionStatus) {
+                    console.log('Camera permission status:', permissionStatus.state);
+                    
+                    if (permissionStatus.state === 'denied') {
+                        showAlert('warning', 'Akses kamera ditolak. Silakan izinkan akses kamera di pengaturan browser.', false);
+                    }
+                    
+                    // Listen for permission changes
+                    permissionStatus.addEventListener('change', function() {
+                        console.log('Camera permission changed to:', this.state);
+                    });
+                })
+                .catch(function(error) {
+                    console.log('Could not check camera permissions:', error);
+                });
+        }
+    }
+    
+    // Check for torch support
+    function checkTorchSupport(stream) {
+        const track = stream.getVideoTracks()[0];
+        
+        if (track && track.getCapabilities && track.getCapabilities().torch) {
+            const torchButton = `
+                <button id="toggleTorch" type="button">
+                    <i class="fas fa-lightbulb me-1"></i> Flash
+                </button>
+            `;
+            
+            $('.scanner-wrapper').append(torchButton);
+            
+            $('#toggleTorch').click(function() {
+                const torchOn = $(this).hasClass('active');
+                
+                track.applyConstraints({
+                    advanced: [{ torch: !torchOn }]
+                })
+                .then(() => {
+                    $(this).toggleClass('active');
+                    console.log('Torch toggled:', !torchOn);
+                })
+                .catch(err => {
+                    console.error('Torch error:', err);
+                    showAlert('warning', 'Flash tidak dapat digunakan pada perangkat ini.', true);
+                });
+            });
+        }
+    }
+    
+    // Play success sound
     function playSuccessSound() {
         try {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -818,54 +830,28 @@ $(document).ready(function() {
             oscillator.connect(gainNode);
             gainNode.connect(audioContext.destination);
             
-            oscillator.frequency.value = 800;
-            oscillator.type = 'sine';
-            
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            oscillator.type = "sine";
+            oscillator.frequency.value = 1200;
+            gainNode.gain.value = 0.2;
             
             oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.3);
+            oscillator.stop(audioContext.currentTime + 0.2);
         } catch (e) {
             console.log('Audio not supported');
         }
     }
     
+    // Flash success animation
     function flashSuccess() {
         const overlay = $('.qr-scanner-overlay');
-        overlay.css({
-            'background': 'rgba(0, 255, 0, 0.3)',
-            'transition': 'background 0.3s ease'
-        });
+        overlay.css('background', 'rgba(0, 255, 0, 0.3)');
         
         setTimeout(() => {
-            overlay.css('background', 'rgba(0, 0, 0, 0.5)');
-        }, 300);
+            overlay.css('background', 'rgba(0, 0, 0, 0.4)');
+        }, 500);
     }
     
-    function addTorchButton(stream) {
-        const track = stream.getVideoTracks()[0];
-        if (track.getCapabilities && track.getCapabilities().torch) {
-            const torchButton = `
-                <button type="button" class="btn btn-outline-light btn-sm mt-2" id="toggleTorch">
-                    <i class="fas fa-lightbulb me-1"></i> Flash
-                </button>
-            `;
-            $('.qr-scanner-text').append(torchButton);
-            
-            let torchOn = false;
-            $('#toggleTorch').click(function() {
-                torchOn = !torchOn;
-                track.applyConstraints({
-                    advanced: [{ torch: torchOn }]
-                }).then(() => {
-                    $(this).find('i').toggleClass('fa-lightbulb fas-regular', !torchOn)
-                           .toggleClass('fa-lightbulb-on text-warning', torchOn);
-                }).catch(console.warn);
-            });
-        }
-    }
-
+    // Process QR Code
     function processQRCode(qrCode) {
         showAlert('info', '<i class="fas fa-spinner fa-spin me-2"></i>Memproses QR Code...', false);
         
@@ -875,31 +861,48 @@ $(document).ready(function() {
             data: { qr_code: qrCode },
             success: function(response) {
                 if (response.success) {
-                    showUserInfo(response.data);
+                    showUserInfo(response.data || response.user);
                     showStep('pin');
-                    showAlert('success', response.message, true);
+                    showAlert('success', response.message || 'QR Code valid! Silakan masukkan PIN Anda.', true);
                 } else {
-                    showAlert('danger', response.message, false);
+                    showStep('qr');
+                    showAlert('danger', response.message || 'QR Code tidak valid', false);
                 }
             },
             error: function(xhr) {
                 const message = xhr.responseJSON?.message || 'Terjadi kesalahan saat memproses QR Code.';
+                showStep('qr');
                 showAlert('danger', message, false);
             }
         });
     }
 
+    // Show user info
     function showUserInfo(userData) {
-        $('#user-initials').text(userData.initials);
-        $('#welcome-message').text(`Selamat datang, ${userData.name}!`);
-        $('#user-role').text(userData.role);
+        // Calculate initials from name
+        const nameParts = userData.name ? userData.name.split(' ') : ['?'];
+        let initials = nameParts[0][0];
+        if (nameParts.length > 1) {
+            initials += nameParts[nameParts.length - 1][0];
+        }
+        initials = initials.toUpperCase();
         
+        // Update UI
+        $('#user-initials').text(initials);
+        $('#welcome-message').text('Selamat datang, ' + (userData.name || ''));
+        $('#user-role').text(userData.role || 'Staff');
+        
+        // Set user details
         let details = '';
-        if (userData.nip) details += `NIP: ${userData.nip}`;
-        if (userData.mata_pelajaran) details += ` • ${userData.mata_pelajaran}`;
+        if (userData.nip) details += 'NIP: ' + userData.nip;
+        if (userData.mata_pelajaran) {
+            if (details) details += ' • ';
+            details += userData.mata_pelajaran;
+        }
         $('#user-details').text(details);
     }
 
+    // Verify PIN
     function verifyPin(pin) {
         showAlert('info', '<i class="fas fa-spinner fa-spin me-2"></i>Memverifikasi PIN...', false);
         
@@ -909,12 +912,20 @@ $(document).ready(function() {
             data: { pin: pin },
             success: function(response) {
                 if (response.success) {
-                    showAlert('success', response.message, false);
-                    setTimeout(() => {
-                        window.location.href = response.data.redirect_url;
+                    showAlert('success', response.message || 'Login berhasil!', false);
+                    
+                    // Redirect to dashboard
+                    setTimeout(function() {
+                        if (response.redirect) { 
+                            window.location.href = response.redirect; 
+                        } else if (response.data && response.data.redirect_url) { 
+                            window.location.href = response.data.redirect_url; 
+                        } else { 
+                            window.location.href = '/'; 
+                        }
                     }, 1500);
                 } else {
-                    showAlert('danger', response.message, false);
+                    showAlert('danger', response.message || 'PIN tidak valid.', false);
                     $('#pin-input').val('').focus();
                 }
             },
@@ -926,18 +937,7 @@ $(document).ready(function() {
         });
     }
 
-    function showStep(step) {
-        $('.step-container').addClass('d-none');
-        
-        if (step === 'qr') {
-            $('#qr-step').removeClass('d-none');
-            $('#manual_qr').val('');
-        } else if (step === 'pin') {
-            $('#pin-step').removeClass('d-none');
-            $('#pin-input').val('').focus();
-        }
-    }
-
+    // Clear session
     function clearSession() {
         $.ajax({
             url: '{{ route("qr.login.clear") }}',
@@ -945,22 +945,43 @@ $(document).ready(function() {
         });
     }
 
+    // Show Step (qr or pin)
+    function showStep(step) {
+        if (step === 'qr') {
+            $('#qr-step').removeClass('d-none');
+            $('#pin-step').addClass('d-none');
+            $('#manual_qr').val('');
+        } else if (step === 'pin') {
+            $('#qr-step').addClass('d-none');
+            $('#pin-step').removeClass('d-none');
+            $('#pin-input').val('').focus();
+        }
+    }
+
+    // Show Alert
     function showAlert(type, message, autoHide = true) {
         const alertHtml = `
-            <div class="alert alert-${type} alert-custom alert-dismissible fade show" role="alert">
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
                 ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         `;
         
         $('#alert-container').html(alertHtml);
         
         if (autoHide && type !== 'danger') {
-            setTimeout(() => {
-                $('.alert').alert('close');
+            setTimeout(function() {
+                $('.alert').fadeOut(function() {
+                    $(this).remove();
+                });
             }, 5000);
         }
     }
+
+    // Cleanup when page is unloaded
+    $(window).on('beforeunload', function() {
+        stopQRScanner();
+    });
 });
 </script>
 @endpush

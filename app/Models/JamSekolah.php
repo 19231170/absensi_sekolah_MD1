@@ -45,7 +45,9 @@ class JamSekolah extends Model
      */
     public function scopeUntukHari($query, $hari)
     {
-        return $query->whereJsonContains('hari_berlaku', strtolower($hari));
+        // Karena data tersimpan sebagai double-encoded JSON string,
+        // kita gunakan LIKE untuk mencari di dalam string
+        return $query->where('hari_berlaku', 'LIKE', '%' . strtolower($hari) . '%');
     }
     
     /**

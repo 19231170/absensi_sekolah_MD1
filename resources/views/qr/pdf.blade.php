@@ -94,7 +94,7 @@
     <div class="qr-grid">
         @foreach($siswa as $s)
         <div class="qr-item">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ urlencode($s->qr_code) }}" 
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&bgcolor=FFFFFF&color=000000&data={{ urlencode($s->qr_code) }}" 
                  alt="QR Code {{ $s->nama }}">
             
             <div class="qr-info">

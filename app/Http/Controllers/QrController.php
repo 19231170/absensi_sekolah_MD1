@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Siswa;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class QrController extends Controller
 {
@@ -43,41 +45,209 @@ class QrController extends Controller
     }
 
     /**
-     * Download QR code sebagai file PNG menggunakan API online
+     * Download QR code sebagai file PNG dengan frame berwarna
      */
     public function download($nis)
     {
         $siswa = Siswa::with('kelas.jurusan')->where('nis', $nis)->firstOrFail();
         
-        // Generate QR code using online API
-        $qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . urlencode($siswa->qr_code);
-        $qrCodeContent = file_get_contents($qrCodeUrl);
-
+        // Generate QR code dengan frame berwarna untuk siswa
+        $qrImageData = $this->generateQrWithColoredFrameData($siswa->qr_code, 'siswa', 400);
+        
         // Set filename
         $filename = 'QR_' . $siswa->nis . '_' . str_replace(' ', '_', $siswa->nama) . '.png';
 
-        return response($qrCodeContent)
+        return response($qrImageData)
             ->header('Content-Type', 'image/png')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
 
     /**
-     * Generate QR code image untuk preview
+     * Generate QR code image untuk preview dengan frame berwarna
      */
     public function image($nis)
     {
         $siswa = Siswa::where('nis', $nis)->firstOrFail();
         
-        // Generate QR code using online API
-        $qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode($siswa->qr_code);
-        $qrCodeContent = file_get_contents($qrCodeUrl);
-
-        return response($qrCodeContent)
-            ->header('Content-Type', 'image/png');
+        // Generate QR code dengan frame putih untuk siswa
+        return $this->generateQrWithColoredFrame($siswa->qr_code, 'siswa', 200);
+    }
+    
+    /**
+     * Generate QR code dengan frame berwarna
+     */
+    private function generateQrWithColoredFrame($qrCode, $type, $size)
+    {
+        // Get standard QR code
+        $qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size={$size}x{$size}&bgcolor=FFFFFF&color=000000&data=" . urlencode($qrCode);
+        $qrImageData = @file_get_contents($qrUrl);
+        
+        if (!$qrImageData) {
+            return response('Failed to generate QR code', 500);
+        }
+        
+        // Create colored frame
+        $frameSize = $size + 60; // Add 30px padding on each side
+        
+        // Create image canvas
+        $canvas = imagecreatetruecolor($frameSize, $frameSize);
+        
+        // Set frame colors based on type
+        switch ($type) {
+            case 'admin':
+                $bgColor = imagecolorallocate($canvas, 76, 175, 80); // Green #4CAF50
+                break;
+            case 'guru':
+                $bgColor = imagecolorallocate($canvas, 33, 150, 243); // Blue #2196F3
+                break;
+            case 'siswa':
+            default:
+                $bgColor = imagecolorallocate($canvas, 245, 245, 245); // Light gray #F5F5F5
+                break;
+        }
+        
+        // Fill background with color
+        imagefill($canvas, 0, 0, $bgColor);
+        
+        // Load QR code image
+        $qrImage = imagecreatefromstring($qrImageData);
+        
+        // Calculate center position
+        $x = ($frameSize - $size) / 2;
+        $y = ($frameSize - $size) / 2;
+        
+        // Add white background for QR code
+        $whiteColor = imagecolorallocate($canvas, 255, 255, 255);
+        imagefilledrectangle($canvas, $x-5, $y-5, $x+$size+4, $y+$size+4, $whiteColor);
+        
+        // Add subtle border
+        $borderColor = imagecolorallocate($canvas, 200, 200, 200);
+        imagerectangle($canvas, $x-5, $y-5, $x+$size+4, $y+$size+4, $borderColor);
+        
+        // Place QR code on canvas
+        imagecopy($canvas, $qrImage, $x, $y, 0, 0, $size, $size);
+        
+        // Output image
+        ob_start();
+        imagepng($canvas);
+        $imageData = ob_get_contents();
+        ob_end_clean();
+        
+        // Clean up memory
+        imagedestroy($canvas);
+        imagedestroy($qrImage);
+        
+        return response($imageData)
+            ->header('Content-Type', 'image/png')
+            ->header('Cache-Control', 'public, max-age=3600');
+    }
+    
+    /**
+     * Generate QR code data dengan frame berwarna (for download)
+     */
+    private function generateQrWithColoredFrameData($qrCode, $type, $size)
+    {
+        // Get standard QR code
+        $qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size={$size}x{$size}&bgcolor=FFFFFF&color=000000&data=" . urlencode($qrCode);
+        $qrImageData = @file_get_contents($qrUrl);
+        
+        if (!$qrImageData) {
+            throw new \Exception('Failed to generate QR code');
+        }
+        
+        // Create colored frame
+        $frameSize = $size + 100; // Add 50px padding on each side for downloads
+        
+        // Create image canvas
+        $canvas = imagecreatetruecolor($frameSize, $frameSize);
+        
+        // Set frame colors based on type
+        switch ($type) {
+            case 'admin':
+                $bgColor = imagecolorallocate($canvas, 76, 175, 80); // Green #4CAF50
+                break;
+            case 'guru':
+                $bgColor = imagecolorallocate($canvas, 33, 150, 243); // Blue #2196F3
+                break;
+            case 'siswa':
+            default:
+                $bgColor = imagecolorallocate($canvas, 245, 245, 245); // Light gray #F5F5F5
+                break;
+        }
+        
+        // Fill background with color
+        imagefill($canvas, 0, 0, $bgColor);
+        
+        // Load QR code image
+        $qrImage = imagecreatefromstring($qrImageData);
+        
+        // Calculate center position
+        $x = ($frameSize - $size) / 2;
+        $y = ($frameSize - $size) / 2;
+        
+        // Add white background for QR code with extra padding
+        $whiteColor = imagecolorallocate($canvas, 255, 255, 255);
+        imagefilledrectangle($canvas, $x-10, $y-10, $x+$size+9, $y+$size+9, $whiteColor);
+        
+        // Add subtle border
+        $borderColor = imagecolorallocate($canvas, 180, 180, 180);
+        imagerectangle($canvas, $x-10, $y-10, $x+$size+9, $y+$size+9, $borderColor);
+        
+        // Place QR code on canvas
+        imagecopy($canvas, $qrImage, $x, $y, 0, 0, $size, $size);
+        
+        // Add role label at bottom
+        $this->addRoleLabel($canvas, $frameSize, $type);
+        
+        // Output image
+        ob_start();
+        imagepng($canvas);
+        $imageData = ob_get_contents();
+        ob_end_clean();
+        
+        // Clean up memory
+        imagedestroy($canvas);
+        imagedestroy($qrImage);
+        
+        return $imageData;
+    }
+    
+    /**
+     * Add role label to QR code frame
+     */
+    private function addRoleLabel($canvas, $frameSize, $type)
+    {
+        // Set text color to white
+        $textColor = imagecolorallocate($canvas, 255, 255, 255);
+        
+        // Role labels
+        $labels = [
+            'admin' => 'ADMIN',
+            'guru' => 'GURU', 
+            'siswa' => 'SISWA'
+        ];
+        
+        $label = $labels[$type] ?? 'USER';
+        
+        // Use built-in font (font 5 is the largest built-in font)
+        $font = 5;
+        $textWidth = imagefontwidth($font) * strlen($label);
+        $textHeight = imagefontheight($font);
+        
+        // Calculate center position for text
+        $x = ($frameSize - $textWidth) / 2;
+        $y = $frameSize - 25; // 25px from bottom
+        
+        // Add text shadow
+        $shadowColor = imagecolorallocate($canvas, 0, 0, 0);
+        imagestring($canvas, $font, $x+1, $y+1, $label, $shadowColor);
+        
+        // Add main text
+        imagestring($canvas, $font, $x, $y, $label, $textColor);
     }
 
     /**
-     * Generate QR code untuk semua siswa dalam ZIP
+     * Generate QR code untuk semua siswa dalam ZIP dengan frame berwarna
      */
     public function downloadAll()
     {
@@ -104,14 +274,16 @@ class QrController extends Controller
 
         if ($zip->open($zipPath, \ZipArchive::CREATE) === TRUE) {
             foreach ($siswa as $s) {
-                // Generate QR code using online API
-                $qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . urlencode($s->qr_code);
-                $qrCodeContent = @file_get_contents($qrCodeUrl);
-                
-                if ($qrCodeContent !== false) {
+                try {
+                    // Generate QR code dengan frame abu-abu untuk siswa
+                    $qrImageData = $this->generateQrWithColoredFrameData($s->qr_code, 'siswa', 300);
+                    
                     // Add to ZIP
                     $filename = $s->kelas->tingkat . '_' . $s->kelas->nama_kelas . '_' . $s->nis . '_' . str_replace(' ', '_', $s->nama) . '.png';
-                    $zip->addFromString($filename, $qrCodeContent);
+                    $zip->addFromString($filename, $qrImageData);
+                } catch (\Exception $e) {
+                    // Skip this student if QR generation fails
+                    continue;
                 }
             }
             $zip->close();
@@ -124,7 +296,7 @@ class QrController extends Controller
     }
 
     /**
-     * Alternative download method - HTML page with all QR codes
+     * Alternative download method - HTML page with all QR codes dengan frame preview
      */
     private function downloadAllAsHtml($siswa)
     {
@@ -139,30 +311,49 @@ class QrController extends Controller
             display: inline-block; 
             margin: 10px; 
             text-align: center; 
-            border: 1px solid #ddd; 
-            padding: 15px; 
-            border-radius: 8px;
+            background: #F5F5F5;
+            padding: 20px; 
+            border-radius: 10px;
         }
-        .qr-info { margin-top: 10px; font-size: 12px; }
+        .qr-inner {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            display: inline-block;
+            border: 1px solid #ddd;
+        }
+        .qr-info { 
+            margin-top: 10px; 
+            font-size: 12px; 
+            color: #333;
+        }
         .qr-info strong { color: #333; }
         img { max-width: 200px; }
+        .role-label {
+            color: #666;
+            font-weight: bold;
+            margin-top: 5px;
+        }
         @media print {
             .qr-container { break-inside: avoid; }
         }
     </style>
 </head>
 <body>
-    <h1>QR Codes - Semua Siswa</h1>
+    <h1>QR Codes - Semua Siswa dengan Frame Abu-abu</h1>
     <p><strong>Generated:</strong> ' . date('d/m/Y H:i:s') . '</p>
     <p><strong>Total Siswa:</strong> ' . $siswa->count() . '</p>
     <hr>';
     
         foreach ($siswa as $s) {
-            $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode($s->qr_code);
+            $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&bgcolor=FFFFFF&color=000000&data=' . urlencode($s->qr_code);
             
             $html .= '
     <div class="qr-container">
-        <img src="' . $qrUrl . '" alt="QR Code ' . htmlspecialchars($s->nama) . '">
+        <div class="qr-inner">
+            <img src="' . $qrUrl . '" alt="QR Code ' . htmlspecialchars($s->nama) . '">
+        </div>
+        <div class="role-label">SISWA</div>
         <div class="qr-info">
             <strong>' . htmlspecialchars($s->nama) . '</strong><br>
             NIS: ' . $s->nis . '<br>
@@ -207,7 +398,7 @@ class QrController extends Controller
      */
     public function generateStaffQr(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         
         if (!$user || !in_array($user->role, ['admin', 'guru'])) {
             return redirect()->back()->with('error', 'Tidak memiliki akses untuk generate QR Code staff.');
@@ -223,11 +414,11 @@ class QrController extends Controller
     }
 
     /**
-     * Download Staff QR Code
+     * Download Staff QR Code dengan frame berwarna
      */
     public function downloadStaffQr(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         
         if (!$user || !in_array($user->role, ['admin', 'guru'])) {
             abort(403, 'Unauthorized');
@@ -240,16 +431,12 @@ class QrController extends Controller
         }
 
         try {
-            $qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=" . urlencode($user->qr_code);
-            $qrImage = file_get_contents($qrUrl);
-            
-            if ($qrImage === false) {
-                throw new \Exception('Failed to generate QR code image');
-            }
+            // Generate QR code dengan frame berwarna
+            $qrImageData = $this->generateQrWithColoredFrameData($user->qr_code, $user->role, 400);
             
             $fileName = 'QR_Staff_' . $user->role . '_' . $user->qr_code . '.png';
             
-            return response($qrImage)
+            return response($qrImageData)
                 ->header('Content-Type', 'image/png')
                 ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
                 

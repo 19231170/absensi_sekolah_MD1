@@ -136,7 +136,7 @@
                         </a>
                     </div>
                     <div class="col-6">
-                        <a href="{{ route('absensi.index') }}" class="btn btn-success btn-sm w-100 mb-2">
+                        <a href="{{ route('jadwal-kelas.index') }}" class="btn btn-success btn-sm w-100 mb-2">
                             <i class="fas fa-eye me-2"></i>
                             Monitor Real-time
                         </a>

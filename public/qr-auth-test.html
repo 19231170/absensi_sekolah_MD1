@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Authentication System Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 600px;
+            max-width: 800px;
             margin: 50px auto;
             padding: 20px;
             background: #f5f5f5;
@@ -15,8 +17,9 @@
         .card {
             background: white;
             padding: 30px;
-            border-radius: 10px;
+            border-radius: 15px;
             box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
         }
         .test-info {
             background: #e3f2fd;
@@ -38,12 +41,15 @@
             color: white;
             padding: 12px 25px;
             text-decoration: none;
-            border-radius: 5px;
+            border-radius: 25px;
             margin: 10px 5px;
             font-weight: bold;
+            transition: all 0.3s ease;
         }
         .btn:hover {
             background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
         .btn-primary { background: #2196f3; }
         .btn-primary:hover { background: #1976d2; }
@@ -62,6 +68,54 @@
         .feature-list li {
             margin: 8px 0;
         }
+        
+        /* New WhatsApp Style QR Scanner Features Section */
+        .new-features {
+            background: #fff8e1;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .new-features h3 {
+            color: #ff6f00;
+            margin-bottom: 15px;
+        }
+        
+        .qr-demo-images {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .qr-item {
+            text-align: center;
+            width: 120px;
+        }
+        
+        .qr-item img {
+            width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 5px;
+            margin-bottom: 10px;
+            transition: transform 0.3s ease;
+        }
+        
+        .qr-item img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .qr-item span {
+            font-size: 14px;
+            display: block;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -70,6 +124,43 @@
         <div class="test-info">
             <h2>📱 Sistem Login Staff dengan QR Code + PIN</h2>
             <p>Sistem autentikasi khusus untuk guru dan administrator menggunakan kombinasi QR Code scan dan PIN 4 digit untuk keamanan berlapis.</p>
+        </div>
+
+        <!-- New WhatsApp Style QR Scanner Feature Section -->
+        <div class="new-features">
+            <h3><i class="fab fa-whatsapp me-2"></i> NEW: WhatsApp Style QR Scanner!</h3>
+            <p>Sistem scan QR kini hadir dengan tampilan fullscreen mirip WhatsApp untuk pengalaman scan yang lebih baik dan familiar.</p>
+            
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-star me-2"></i>Fitur Baru:</h5>
+                    <ul>
+                        <li>Tampilan fullscreen seperti WhatsApp</li>
+                        <li>Animasi scanning garis hijau</li>
+                        <li>Kotak scanner dengan sudut berpenanda</li>
+                        <li>Toggle flash (jika didukung device)</li>
+                        <li>Input kode QR manual alternatif</li>
+                        <li>Feedback suara dan visual saat QR terdeteksi</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5><i class="fas fa-qrcode me-2"></i>QR Demo:</h5>
+                    <div class="qr-demo-images">
+                        <div class="qr-item">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&bgcolor=4CAF50&color=FFFFFF&data=ADM001" alt="QR Admin">
+                            <span>ADM001</span>
+                        </div>
+                        <div class="qr-item">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&bgcolor=2196F3&color=FFFFFF&data=GRU001" alt="QR Guru">
+                            <span>GRU001</span>
+                        </div>
+                        <div class="qr-item">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&bgcolor=2196F3&color=FFFFFF&data=GRU002" alt="QR Guru">
+                            <span>GRU002</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="feature-list">
@@ -124,23 +215,36 @@
         </div>
 
         <h2>🚀 Test Links:</h2>
-        <a href="http://127.0.0.1:8081/auth/qr-login" class="btn btn-primary">
-            🔐 Test QR Login System
-        </a>
-        <a href="http://127.0.0.1:8081/absensi" class="btn">
-            📊 Absensi Dashboard
-        </a>
+        <div class="text-center mb-3">
+            <a href="/login/qr" class="btn btn-primary">
+                <i class="fas fa-qrcode me-2"></i> Coba WhatsApp Style QR Scanner
+            </a>
+        </div>
+        <div class="text-center">
+            <a href="http://127.0.0.1:8081/auth/qr-login" class="btn btn-primary">
+                <i class="fas fa-sign-in-alt me-2"></i> Test QR Login System
+            </a>
+            <a href="http://127.0.0.1:8081/absensi" class="btn">
+                <i class="fas fa-chart-line me-2"></i> Absensi Dashboard
+            </a>
+        </div>
 
         <div class="test-info" style="margin-top: 30px;">
             <h3>📋 Cara Testing:</h3>
             <ol>
-                <li>Klik tombol "Test QR Login System"</li>
-                <li>Pilih "Mulai Scan QR Code" atau masukkan kode QR manual</li>
-                <li>Masukkan salah satu kode QR dari daftar di atas (contoh: <code>ADM001</code>)</li>
+                <li>Klik tombol "Coba WhatsApp Style QR Scanner" atau "Test QR Login System"</li>
+                <li>Pilih "Mulai Scan QR Code" untuk membuka scanner gaya WhatsApp</li>
+                <li>Scan salah satu QR code atau masukkan kode QR manual (contoh: <code>ADM001</code>)</li>
                 <li>Sistem akan menampilkan informasi user dan meminta PIN</li>
                 <li>Masukkan PIN yang sesuai (contoh: <code>1234</code> untuk admin)</li>
                 <li>Login berhasil dan akan diredirect ke dashboard sesuai role</li>
             </ol>
+        </div>
+
+        <div class="text-center mt-4">
+            <div class="alert alert-warning" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i> Pastikan mengizinkan akses kamera pada browser saat menggunakan QR scanner!
+            </div>
         </div>
 
         <div style="text-align: center; margin-top: 30px; color: #666;">
@@ -150,5 +254,8 @@
             </small>
         </div>
     </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

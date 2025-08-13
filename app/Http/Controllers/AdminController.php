@@ -40,7 +40,7 @@ class AdminController extends Controller
         
         // Verify admin token
         if (!$this->verifyAdminToken($token)) {
-            return redirect()->route('absensi.index')
+            return redirect()->route('jadwal-kelas.index')
                 ->with('error', 'Token admin tidak valid atau sudah expired!');
         }
         
@@ -124,7 +124,7 @@ class AdminController extends Controller
                 'deleted_counts' => $deletedCounts,
                 'total_deleted' => array_sum($deletedCounts),
                 'warning' => 'SEMUA DATA TELAH DIHAPUS PERMANEN!',
-                'redirect_url' => route('absensi.index')
+                'redirect_url' => route('jadwal-kelas.index')
             ]);
             
         } catch (\Exception $e) {
@@ -198,8 +198,8 @@ class AdminController extends Controller
         
         $adminUrl = route('admin.dashboard', ['token' => $adminToken]);
         
-        // Use external QR service for now
-        $qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($adminUrl);
+        // Use external QR service with green background for admin
+        $qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&bgcolor=4CAF50&color=FFFFFF&data=" . urlencode($adminUrl);
         
         return redirect($qrUrl);
     }
