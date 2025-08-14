@@ -23,8 +23,6 @@ class AbsensiPelajaran extends Model
 
     protected $casts = [
         'tanggal' => 'date',
-        'jam_masuk' => 'datetime:H:i:s',
-        'jam_keluar' => 'datetime:H:i:s'
     ];
 
     /**

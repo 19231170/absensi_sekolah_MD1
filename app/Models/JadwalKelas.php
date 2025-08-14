@@ -23,9 +23,6 @@ class JadwalKelas extends Model
     ];
 
     protected $casts = [
-        'jam_masuk' => 'datetime:H:i:s',
-        'jam_keluar' => 'datetime:H:i:s',
-        'batas_telat' => 'datetime:H:i:s',
         'is_active' => 'boolean'
     ];
 
@@ -83,6 +80,7 @@ class JadwalKelas extends Model
      */
     public function getJamMasukFormatAttribute(): string
     {
+        if (!$this->jam_masuk) return '00:00';
         return Carbon::parse($this->jam_masuk)->format('H:i');
     }
 
@@ -91,6 +89,7 @@ class JadwalKelas extends Model
      */
     public function getJamKeluarFormatAttribute(): string
     {
+        if (!$this->jam_keluar) return '00:00';
         return Carbon::parse($this->jam_keluar)->format('H:i');
     }
 
@@ -99,19 +98,27 @@ class JadwalKelas extends Model
      */
     public function getDurasiAttribute(): string
     {
-        $masuk = Carbon::parse($this->jam_masuk);
-        $keluar = Carbon::parse($this->jam_keluar);
-        $durasi = $masuk->diffInMinutes($keluar);
+        if (!$this->jam_masuk || !$this->jam_keluar) {
+            return '0 menit';
+        }
         
-        $jam = floor($durasi / 60);
-        $menit = $durasi % 60;
-        
-        if ($jam > 0 && $menit > 0) {
-            return "{$jam} jam {$menit} menit";
-        } elseif ($jam > 0) {
-            return "{$jam} jam";
-        } else {
-            return "{$menit} menit";
+        try {
+            $masuk = Carbon::parse($this->jam_masuk);
+            $keluar = Carbon::parse($this->jam_keluar);
+            $durasi = $masuk->diffInMinutes($keluar);
+            
+            $jam = floor($durasi / 60);
+            $menit = $durasi % 60;
+            
+            if ($jam > 0 && $menit > 0) {
+                return "{$jam} jam {$menit} menit";
+            } elseif ($jam > 0) {
+                return "{$jam} jam";
+            } else {
+                return "{$menit} menit";
+            }
+        } catch (\Exception $e) {
+            return 'Error durasi';
         }
     }
 }

@@ -49,6 +49,7 @@ class Kelas extends Model
      */
     public function getNamaLengkapAttribute(): string
     {
-        return "{$this->tingkat} {$this->nama_kelas} - {$this->jurusan->nama_jurusan}";
+        $jurusanNama = $this->jurusan ? $this->jurusan->nama_jurusan : 'Jurusan Tidak Diketahui';
+        return "{$this->tingkat} {$this->nama_kelas} - {$jurusanNama}";
     }
 }

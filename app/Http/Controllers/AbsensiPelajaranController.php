@@ -46,14 +46,61 @@ class AbsensiPelajaranController extends Controller
         }
         
         // Tentukan jenis absen berdasarkan waktu
-        $isMasukTime = $now->between($jamMasuk->copy()->subMinutes(15), $jamMasuk->copy()->addMinutes(15));
-        $isKeluarTime = $now->between($jamKeluar->copy()->subMinutes(15), $jamKeluar->copy()->addMinutes(15));
-        $isDuringClass = $now->between($jamMasuk, $jamKeluar);
+        $jamMasuk = Carbon::parse($jadwalKelas->jam_masuk);
+        $jamKeluar = Carbon::parse($jadwalKelas->jam_keluar);
+        
+        // Debug informasi untuk membantu troubleshooting
+        Log::info('Debug AbsensiPelajaran index:', [
+            'now' => $now->format('H:i:s'),
+            'jam_masuk' => $jamMasuk->format('H:i:s'),
+            'jam_keluar' => $jamKeluar->format('H:i:s'),
+            'batas_telat' => $jadwalKelas->batas_telat
+        ]);
+        
+        // Logika untuk menentukan jenis absensi:
+        // 1. Jika dalam 30 menit sebelum jam masuk sampai dengan jam masuk + batas telat = MASUK
+        // 2. Jika dari jam masuk + batas telat sampai jam keluar + 15 menit = KELUAR
+        
+        $batasTelat = $jadwalKelas->batas_telat 
+            ? Carbon::parse($jadwalKelas->batas_telat)
+            : $jamMasuk->copy()->addMinutes(15);
+        
+        $waktuMulaiMasuk = $jamMasuk->copy()->subMinutes(30);
+        $waktuSelesaiMasuk = $batasTelat->copy();
+        $waktuMulaiKeluar = $jamKeluar->copy()->subMinutes(15);
+        $waktuSelesaiKeluar = $jamKeluar->copy()->addMinutes(15);
+        
+        Log::info('Debug waktu absensi:', [
+            'waktu_mulai_masuk' => $waktuMulaiMasuk->format('H:i:s'),
+            'waktu_selesai_masuk' => $waktuSelesaiMasuk->format('H:i:s'),
+            'waktu_mulai_keluar' => $waktuMulaiKeluar->format('H:i:s'),
+            'waktu_selesai_keluar' => $waktuSelesaiKeluar->format('H:i:s'),
+        ]);
         
         $absenType = 'masuk'; // default
-        if ($isKeluarTime || $isDuringClass) {
+        
+        // Cek apakah sudah ada absensi masuk hari ini
+        $existingAbsensi = AbsensiPelajaran::where('jadwal_kelas_id', $jadwalKelasId)
+            ->whereDate('tanggal', $now->toDateString())
+            ->whereNotNull('jam_masuk')
+            ->exists();
+        
+        Log::info('Existing absensi masuk:', ['exists' => $existingAbsensi]);
+        
+        // Jika sudah ada absensi masuk dan waktu sekarang untuk keluar, maka keluar
+        if ($existingAbsensi && $now->between($waktuMulaiKeluar, $waktuSelesaiKeluar)) {
             $absenType = 'keluar';
         }
+        // Jika waktu sekarang masih dalam periode masuk
+        elseif ($now->between($waktuMulaiMasuk, $waktuSelesaiMasuk)) {
+            $absenType = 'masuk';
+        }
+        // Jika waktu sekarang dalam periode keluar tapi belum ada absensi masuk
+        elseif ($now->between($waktuMulaiKeluar, $waktuSelesaiKeluar)) {
+            $absenType = 'keluar';
+        }
+        
+        Log::info('Determined absen type:', ['type' => $absenType]);
         
         // Informasi tambahan untuk view
         $waktuDisplay = $now->format('H:i');
@@ -72,6 +119,11 @@ class AbsensiPelajaranController extends Controller
      */
     public function scanQr(Request $request): JsonResponse
     {
+        Log::info('AbsensiPelajaranController::scanQr called', [
+            'request_data' => $request->all(),
+            'timestamp' => now()->toDateTimeString()
+        ]);
+
         try {
             $request->validate([
                 'qr_code' => 'required|string',
@@ -82,6 +134,12 @@ class AbsensiPelajaranController extends Controller
             $qrCode = $request->qr_code;
             $jadwalKelasId = $request->jadwal_kelas_id;
             $type = $request->type;
+            
+            Log::info('Validation passed', [
+                'qr_code' => $qrCode,
+                'jadwal_kelas_id' => $jadwalKelasId,
+                'type' => $type
+            ]);
             
             // Set timezone untuk memastikan menggunakan WIB
             $today = Carbon::today('Asia/Jakarta');
@@ -94,24 +152,67 @@ class AbsensiPelajaranController extends Controller
                 ->first();
 
             if (!$siswa) {
+                Log::warning('Siswa not found with QR code', ['qr_code' => $qrCode]);
                 return response()->json([
                     'success' => false,
                     'message' => 'QR Code tidak ditemukan atau siswa tidak aktif!'
                 ], 404);
             }
 
+            Log::info('Siswa found', [
+                'siswa_id' => $siswa->id,
+                'siswa_nama' => $siswa->nama,
+                'siswa_nis' => $siswa->nis
+            ]);
+
+            // Validasi relasi siswa
+            if (!$siswa->kelas) {
+                Log::warning('Siswa kelas not found', [
+                    'siswa_id' => $siswa->id,
+                    'kelas_id' => $siswa->kelas_id
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data kelas siswa tidak ditemukan!'
+                ], 400);
+            }
+
+            if (!$siswa->kelas->jurusan) {
+                Log::warning('Siswa jurusan not found', [
+                    'siswa_id' => $siswa->id,
+                    'kelas_id' => $siswa->kelas_id,
+                    'jurusan_id' => $siswa->kelas->jurusan_id
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data jurusan siswa tidak ditemukan!'
+                ], 400);
+            }
+
             // Ambil data jadwal kelas
             $jadwalKelas = JadwalKelas::with('kelas.jurusan')->find($jadwalKelasId);
             
             if (!$jadwalKelas) {
+                Log::warning('JadwalKelas not found', ['jadwal_kelas_id' => $jadwalKelasId]);
                 return response()->json([
                     'success' => false,
                     'message' => 'Jadwal kelas tidak ditemukan!'
                 ], 404);
             }
             
+            Log::info('JadwalKelas found', [
+                'jadwal_id' => $jadwalKelas->id,
+                'mata_pelajaran' => $jadwalKelas->mata_pelajaran,
+                'jadwal_kelas_id' => $jadwalKelas->kelas_id,
+                'siswa_kelas_id' => $siswa->kelas_id
+            ]);
+            
             // Validasi kelas siswa dengan jadwal
             if ($siswa->kelas_id !== $jadwalKelas->kelas_id) {
+                Log::warning('Class mismatch', [
+                    'siswa_kelas_id' => $siswa->kelas_id,
+                    'jadwal_kelas_id' => $jadwalKelas->kelas_id
+                ]);
                 return response()->json([
                     'success' => false,
                     'message' => 'Siswa tidak terdaftar di kelas untuk jadwal pelajaran ini!'
@@ -121,11 +222,22 @@ class AbsensiPelajaranController extends Controller
             // Validasi apakah jadwal ini valid untuk waktu sekarang
             $validationResult = $this->validatePelajaranTime($jadwalKelas, $now, $type);
             if (!$validationResult['valid']) {
+                Log::warning('Time validation failed', [
+                    'type' => $type,
+                    'current_time' => $now->format('H:i:s'),
+                    'validation_message' => $validationResult['message']
+                ]);
                 return response()->json([
                     'success' => false,
                     'message' => $validationResult['message']
                 ], 400);
             }
+            
+            Log::info('Processing absensi', [
+                'type' => $type,
+                'siswa_nis' => $siswa->nis,
+                'jadwal_id' => $jadwalKelas->id
+            ]);
             
             if ($type === 'masuk') {
                 return $this->prosesAbsenMasuk($siswa, $jadwalKelas, $today, $now);
@@ -134,6 +246,11 @@ class AbsensiPelajaranController extends Controller
             }
             
         } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation error in scanQr:', [
+                'errors' => $e->validator->errors()->all(),
+                'request_data' => $request->all()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Data tidak valid: ' . implode(', ', $e->validator->errors()->all())
@@ -142,12 +259,13 @@ class AbsensiPelajaranController extends Controller
             Log::error('Error in scanQr Pelajaran: ' . $e->getMessage(), [
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
             ]);
             
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan sistem. Silakan coba lagi.'
+                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -277,14 +395,16 @@ class AbsensiPelajaranController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Absen masuk berhasil!',
+            'jenis_absensi' => 'Masuk',
             'data' => [
                 'nis' => $siswa->nis,
                 'nama' => $siswa->nama,
-                'kelas' => $siswa->kelas->nama_lengkap,
-                'jurusan' => $siswa->kelas->jurusan->nama_jurusan,
+                'kelas' => ($siswa->kelas ? "{$siswa->kelas->tingkat} {$siswa->kelas->nama_kelas}" : 'Kelas tidak diketahui'),
+                'jurusan' => ($siswa->kelas && $siswa->kelas->jurusan ? $siswa->kelas->jurusan->nama_jurusan : 'Jurusan tidak diketahui'),
                 'mata_pelajaran' => $jadwalKelas->mata_pelajaran,
                 'guru_pengampu' => $jadwalKelas->guru_pengampu,
                 'jam_masuk' => $now->format('H:i:s'),
+                'jam_keluar' => null,
                 'status' => $status
             ]
         ]);
@@ -299,10 +419,40 @@ class AbsensiPelajaranController extends Controller
         $absensi = AbsensiPelajaran::where('nis', $siswa->nis)
             ->where('jadwal_kelas_id', $jadwalKelas->id)
             ->whereDate('tanggal', $today)
-            ->whereNotNull('jam_masuk')
             ->first();
 
+        // Jika belum ada absensi sama sekali, buat baru dengan status langsung keluar
         if (!$absensi) {
+            $absensi = AbsensiPelajaran::create([
+                'nis' => $siswa->nis,
+                'jadwal_kelas_id' => $jadwalKelas->id,
+                'tanggal' => $today,
+                'jam_masuk' => null, // Tidak ada jam masuk
+                'jam_keluar' => $now->format('H:i:s'),
+                'status_masuk' => 'tidak_hadir', // Tidak hadir karena tidak absen masuk
+                'status_keluar' => 'keluar_tanpa_masuk'
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Absen keluar berhasil! (Tanpa absen masuk)',
+                'jenis_absensi' => 'Keluar',
+                'data' => [
+                    'nis' => $siswa->nis,
+                    'nama' => $siswa->nama,
+                    'kelas' => ($siswa->kelas ? "{$siswa->kelas->tingkat} {$siswa->kelas->nama_kelas}" : 'Kelas tidak diketahui'),
+                    'jurusan' => ($siswa->kelas && $siswa->kelas->jurusan ? $siswa->kelas->jurusan->nama_jurusan : 'Jurusan tidak diketahui'),
+                    'mata_pelajaran' => $jadwalKelas->mata_pelajaran,
+                    'guru_pengampu' => $jadwalKelas->guru_pengampu,
+                    'jam_masuk' => 'Tidak absen masuk',
+                    'jam_keluar' => $now->format('H:i:s'),
+                    'status' => 'keluar_tanpa_masuk'
+                ]
+            ]);
+        }
+
+        // Jika sudah ada absensi tapi belum absen masuk
+        if (!$absensi->jam_masuk) {
             return response()->json([
                 'success' => false,
                 'message' => 'Anda belum melakukan absen masuk untuk pelajaran ini hari ini!'
@@ -326,11 +476,12 @@ class AbsensiPelajaranController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Absen keluar berhasil!',
+            'jenis_absensi' => 'Keluar',
             'data' => [
                 'nis' => $siswa->nis,
                 'nama' => $siswa->nama,
-                'kelas' => $siswa->kelas->nama_lengkap,
-                'jurusan' => $siswa->kelas->jurusan->nama_jurusan,
+                'kelas' => ($siswa->kelas ? "{$siswa->kelas->tingkat} {$siswa->kelas->nama_kelas}" : 'Kelas tidak diketahui'),
+                'jurusan' => ($siswa->kelas && $siswa->kelas->jurusan ? $siswa->kelas->jurusan->nama_jurusan : 'Jurusan tidak diketahui'),
                 'mata_pelajaran' => $jadwalKelas->mata_pelajaran,
                 'guru_pengampu' => $jadwalKelas->guru_pengampu,
                 'jam_masuk' => $absensi->jam_masuk,

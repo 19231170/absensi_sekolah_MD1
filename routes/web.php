@@ -80,20 +80,24 @@ Route::middleware(['auth.qr'])->group(function () {
 
     // Jadwal Kelas Routes - Admin Full CRUD, Guru Read Only
     Route::get('/jadwal-kelas', [JadwalKelasController::class, 'index'])->name('jadwal-kelas.index');
-    Route::get('/jadwal-kelas/{jadwalKelas}', [JadwalKelasController::class, 'show'])->name('jadwal-kelas.show');
 
     // Admin Only Routes
     Route::middleware('role:admin')->group(function () {
-        // Jadwal Kelas CRUD (Admin Only)
-        Route::post('/jadwal-kelas', [JadwalKelasController::class, 'store'])->name('jadwal-kelas.store');
+        // Jadwal Kelas CRUD (Admin Only) - Route create harus di atas route dengan parameter
         Route::get('/jadwal-kelas/create', [JadwalKelasController::class, 'create'])->name('jadwal-kelas.create');
+        Route::post('/jadwal-kelas', [JadwalKelasController::class, 'store'])->name('jadwal-kelas.store');
         Route::get('/jadwal-kelas/{jadwalKelas}/edit', [JadwalKelasController::class, 'edit'])->name('jadwal-kelas.edit');
         Route::put('/jadwal-kelas/{jadwalKelas}', [JadwalKelasController::class, 'update'])->name('jadwal-kelas.update');
         Route::delete('/jadwal-kelas/{jadwalKelas}', [JadwalKelasController::class, 'destroy'])->name('jadwal-kelas.destroy');
         Route::patch('/jadwal-kelas/{jadwalKelas}/toggle-active', [JadwalKelasController::class, 'toggleActive'])
             ->name('jadwal-kelas.toggle-active');
+    });
 
-        // Kelas AJAX (Admin Only)
+    // Route show bisa diakses oleh admin dan guru
+    Route::get('/jadwal-kelas/{jadwalKelas}', [JadwalKelasController::class, 'show'])->name('jadwal-kelas.show');
+
+    // Admin Only Routes
+    Route::middleware('role:admin')->group(function () {
         Route::prefix('kelas')->name('kelas.')->group(function () {
             Route::post('/store', [KelasController::class, 'store'])->name('store');
             Route::get('/jurusan', [KelasController::class, 'getJurusan'])->name('jurusan');
@@ -148,6 +152,19 @@ if (config('app.debug')) {
             ]
         ]);
     })->name('debug.auth');
+    
+    // Test route tanpa middleware
+    Route::get('/test-create', [JadwalKelasController::class, 'create'])->name('test.create');
+    
+    // Debug middleware route
+    Route::get('/debug-middleware', function() {
+        return response()->json([
+            'auth_check' => Auth::check(),
+            'user' => Auth::user(),
+            'role' => Auth::user()?->role ?? 'no user',
+            'middleware_passed' => 'This route has no middleware protection'
+        ]);
+    })->name('debug.middleware');
     
     Route::post('/debug/absensi', function(Request $request) {
         return response()->json([
