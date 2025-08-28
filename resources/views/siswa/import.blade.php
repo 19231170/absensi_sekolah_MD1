@@ -57,14 +57,15 @@
                     @endif
 
                     <div class="alert alert-info mb-4">
-                        <h6 class="alert-heading"><i class="fas fa-info-circle"></i> Informasi</h6>
+                        <h6 class="alert-heading"><i class="fas fa-info-circle"></i> Format Import Baru (Disederhanakan)</h6>
                         <ul class="mb-0">
+                            <li><strong>Hanya 5 kolom yang dibutuhkan:</strong> nama_siswa, nis, jenis_kelamin, jurusan, kelas</li>
                             <li>Silahkan download template Excel atau CSV terlebih dahulu</li>
-                            <li>Isi data sesuai format yang telah ditentukan</li>
-                            <li>Pastikan data kelas dan jurusan sudah ada di sistem</li>
+                            <li>Kolom <strong>kelas</strong> menggunakan format gabungan: "10 A", "11 IPA 1", "12 TKJ 2"</li>
+                            <li>Sistem akan otomatis membuat jurusan dan kelas jika belum ada</li>
+                            <li>QR code akan digenerate otomatis untuk setiap siswa</li>
                             <li>Jika NIS sudah ada, data siswa akan diupdate</li>
                             <li>File yang diupload harus berformat <strong>.xlsx</strong>, <strong>.xls</strong>, atau <strong>.csv</strong></li>
-                            <li>Jika mengalami masalah dengan format file, coba gunakan format CSV</li>
                         </ul>
                     </div>
 
@@ -93,7 +94,7 @@
 
             <div class="card mt-4">
                 <div class="card-header">
-                    <h5 class="mb-0">Petunjuk Format Excel</h5>
+                    <h5 class="mb-0">Format Import Baru (Disederhanakan)</h5>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -107,63 +108,83 @@
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td><strong>nis</strong></td>
-                                    <td>Nomor Induk Siswa (wajib)</td>
-                                    <td>12345678</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>nama</strong></td>
+                                    <td><strong>nama_siswa</strong></td>
                                     <td>Nama lengkap siswa (wajib)</td>
-                                    <td>John Doe</td>
+                                    <td>Ahmad Fauzi</td>
                                 </tr>
                                 <tr>
-                                    <td><strong>tingkat</strong></td>
-                                    <td>Tingkat kelas (wajib)</td>
-                                    <td>X, XI, XII</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>kelas</strong></td>
-                                    <td>Nama kelas (wajib)</td>
-                                    <td>A, B, C</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>jurusan</strong></td>
-                                    <td>Nama jurusan (wajib, harus sama persis dengan jurusan yang ada di sistem)</td>
-                                    <td>TKJ, RPL, MM</td>
+                                    <td><strong>nis</strong></td>
+                                    <td>Nomor Induk Siswa (wajib, unik)</td>
+                                    <td>2024001</td>
                                 </tr>
                                 <tr>
                                     <td><strong>jenis_kelamin</strong></td>
-                                    <td>Jenis kelamin: L atau P</td>
+                                    <td>Jenis kelamin: L atau P (wajib)</td>
                                     <td>L</td>
                                 </tr>
                                 <tr>
-                                    <td><strong>tanggal_lahir</strong></td>
-                                    <td>Format: DD/MM/YYYY</td>
-                                    <td>01/01/2008</td>
+                                    <td><strong>jurusan</strong></td>
+                                    <td>Nama jurusan lengkap (wajib)</td>
+                                    <td>Teknik Komputer dan Jaringan</td>
                                 </tr>
                                 <tr>
-                                    <td><strong>alamat</strong></td>
-                                    <td>Alamat lengkap</td>
-                                    <td>Jl. Contoh No. 123</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>nomor_hp</strong></td>
-                                    <td>Nomor telepon</td>
-                                    <td>081234567890</td>
+                                    <td><strong>kelas</strong></td>
+                                    <td>Format gabungan tingkat + nama kelas (wajib)</td>
+                                    <td>10 A, 11 IPA 1, 12 TKJ 2</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
 
-                    <div class="alert alert-warning mt-3">
-                        <h6 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Catatan Penting:</h6>
+                    <div class="alert alert-success mt-3">
+                        <h6 class="alert-heading"><i class="fas fa-check-circle"></i> Keunggulan Format Baru:</h6>
                         <ol class="mb-0">
-                            <li>Pastikan semua kolom wajib terisi dengan benar.</li>
-                            <li>Kolom jurusan harus sama persis dengan yang ada di sistem, termasuk huruf besar/kecil.</li>
-                            <li>NIS tidak boleh duplikat, jika NIS sudah ada, data akan diupdate.</li>
-                            <li>QR code akan digenerate otomatis oleh sistem.</li>
-                            <li>Jika terdapat kesalahan format, sistem akan memberikan pesan error.</li>
+                            <li><strong>Lebih Sederhana:</strong> Hanya 5 kolom yang diperlukan</li>
+                            <li><strong>Auto-Create:</strong> Jurusan dan kelas akan dibuat otomatis jika belum ada</li>
+                            <li><strong>Format Gabungan:</strong> Kolom "kelas" menggabungkan tingkat dan nama kelas</li>
+                            <li><strong>Validasi Ketat:</strong> Data akan divalidasi secara otomatis</li>
+                            <li><strong>Error Handling:</strong> Pesan error yang lebih jelas dan detail</li>
                         </ol>
+                    </div>
+
+                    <div class="alert alert-warning mt-3">
+                        <h6 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Contoh Data:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>nama_siswa</th>
+                                        <th>nis</th>
+                                        <th>jenis_kelamin</th>
+                                        <th>jurusan</th>
+                                        <th>kelas</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Ahmad Fauzi</td>
+                                        <td>2024001</td>
+                                        <td>L</td>
+                                        <td>Teknik Komputer dan Jaringan</td>
+                                        <td>10 A</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Siti Nurhaliza</td>
+                                        <td>2024002</td>
+                                        <td>P</td>
+                                        <td>Rekayasa Perangkat Lunak</td>
+                                        <td>11 IPA 1</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Dewi Sartika</td>
+                                        <td>2024003</td>
+                                        <td>P</td>
+                                        <td>Akuntansi dan Keuangan Lembaga</td>
+                                        <td>12 AKL 2</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>

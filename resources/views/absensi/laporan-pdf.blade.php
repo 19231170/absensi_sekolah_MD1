@@ -135,23 +135,35 @@
         <tbody>
             @forelse($absensi as $index => $item)
             <tr>
-                <td class="text-center">{{ $index + 1 }}</td>
-                <td>{{ $item->nis }}</td>
-                <td>{{ $item->siswa->nama }}</td>
-                <td>{{ $item->siswa->kelas->nama_lengkap }}</td>
-                <td>{{ $item->siswa->kelas->jurusan->nama_jurusan }}</td>
-                <td>{{ $item->jamSekolah->nama_sesi }}</td>
-                <td class="text-center">{{ $item->jam_masuk ?? '-' }}</td>
-                <td class="text-center">{{ $item->jam_keluar ?? '-' }}</td>
-                <td class="text-center">
-                    @if($item->status_masuk == 'hadir')
-                        Hadir
-                    @elseif($item->status_masuk == 'telat')
-                        Telat
-                    @else
-                        Alpha
-                    @endif
-                </td>
+                <td>{{ $index + 1 }}</td>
+                <td>{{ is_array($item) ? $item['nis'] : $item->nis }}</td>
+                                <td>{{ is_array($item) ? $item['nama'] : $item->siswa->nama }}</td>
+                                <td>{{ is_array($item) ? $item['kelas'] : $item->siswa->kelas->nama_lengkap }}</td>
+                                <td>{{ is_array($item) ? $item['jurusan'] : $item->siswa->kelas->jurusan->nama_jurusan }}</td>
+                                <td>{{ is_array($item) ? $item['mata_pelajaran'] : '-' }}</td>
+                                <td>
+                                    @if(is_array($item) ? $item['jam_masuk'] : $item->jam_masuk)
+                                        <span class="badge bg-success">{{ is_array($item) ? $item['jam_masuk'] : $item->jam_masuk }}</span>
+                                    @else
+                                        <span class="badge bg-secondary">-</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if(is_array($item) ? $item['jam_keluar'] : $item->jam_keluar)
+                                        <span class="badge bg-primary">{{ is_array($item) ? $item['jam_keluar'] : $item->jam_keluar }}</span>
+                                    @else
+                                        <span class="badge bg-warning text-dark">Belum Keluar</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if(is_array($item) ? $item['status'] : $item->status_masuk == 'hadir')
+                                        <span class="badge bg-success">Hadir</span>
+                                    @elseif(is_array($item) ? $item['status'] : $item->status_masuk == 'telat')
+                                        <span class="badge bg-warning text-dark">Telat</span>
+                                    @else
+                                        <span class="badge bg-secondary">Tidak Hadir</span>
+                                    @endif
+                                </td>
             </tr>
             @empty
             <tr>

@@ -58,41 +58,63 @@ class FastExcelAbsensiExport
     /**
      * Map absensi data for export
      *
-     * @param \Illuminate\Database\Eloquent\Collection $absensi
+     * @param \Illuminate\Support\Collection $absensi
      * @return \Illuminate\Support\Collection
      */
     protected function mapAbsensiData($absensi)
     {
         return $absensi->map(function ($item) {
-            // Extract kelas and jurusan
-            $kelas = isset($item->siswa) && isset($item->siswa->kelas) ? 
-                $item->siswa->kelas->tingkat . ' ' . $item->siswa->kelas->nama : 'N/A';
+            // Handle both array and object formats
+            if (is_array($item)) {
+                // New array format
+                $jamMasuk = $item['jam_masuk'] ? Carbon::parse($item['jam_masuk'])->format('H:i') : '-';
+                $jamKeluar = $item['jam_keluar'] ? Carbon::parse($item['jam_keluar'])->format('H:i') : '-';
                 
-            $jurusan = isset($item->siswa) && isset($item->siswa->kelas) && isset($item->siswa->kelas->jurusan) ? 
-                $item->siswa->kelas->jurusan->nama : 'N/A';
+                return [
+                    'NIS' => $item['nis'],
+                    'Nama Siswa' => $item['nama'],
+                    'Kelas' => $item['kelas'],
+                    'Jurusan' => $item['jurusan'],
+                    'Tanggal' => Carbon::today()->format('d/m/Y'),
+                    'Sesi/Pelajaran' => $item['sesi'],
+                    'Mata Pelajaran' => $item['mata_pelajaran'],
+                    'Guru Pengampu' => $item['guru_pengampu'],
+                    'Jam Masuk' => $jamMasuk,
+                    'Status Masuk' => $item['status'],
+                    'Jam Keluar' => $jamKeluar,
+                    'Keterangan' => $item['keterangan'],
+                    'Durasi' => $this->calculateDuration($item['jam_masuk'], $item['jam_keluar']),
+                ];
+            } else {
+                // Old object format
+                $kelas = isset($item->siswa) && isset($item->siswa->kelas) ? 
+                    $item->siswa->kelas->tingkat . ' ' . $item->siswa->kelas->nama_kelas : 'N/A';
+                    
+                $jurusan = isset($item->siswa) && isset($item->siswa->kelas) && isset($item->siswa->kelas->jurusan) ? 
+                    $item->siswa->kelas->jurusan->nama_jurusan : 'N/A';
 
-            // Format timestamps for output
-            $jamMasuk = $item->jam_masuk ? Carbon::parse($item->jam_masuk)->format('H:i') : '-';
-            $jamKeluar = $item->jam_keluar ? Carbon::parse($item->jam_keluar)->format('H:i') : '-';
-            $tanggal = Carbon::parse($item->tanggal)->format('d/m/Y');
-            
-            // Get sesi
-            $sesi = isset($item->jamSekolah) ? $item->jamSekolah->nama : 'N/A';
-            
-            // Return formatted data for export
-            return [
-                'NIS' => $item->nis,
-                'Nama Siswa' => isset($item->siswa) ? $item->siswa->nama : 'N/A',
-                'Kelas' => $kelas,
-                'Jurusan' => $jurusan,
-                'Tanggal' => $tanggal,
-                'Sesi' => $sesi,
-                'Jam Masuk' => $jamMasuk,
-                'Status Masuk' => $item->status_masuk,
-                'Jam Keluar' => $jamKeluar,
-                'Status Keluar' => $item->status_keluar,
-                'Durasi' => $this->calculateDuration($item->jam_masuk, $item->jam_keluar),
-            ];
+                $jamMasuk = $item->jam_masuk ? Carbon::parse($item->jam_masuk)->format('H:i') : '-';
+                $jamKeluar = $item->jam_keluar ? Carbon::parse($item->jam_keluar)->format('H:i') : '-';
+                $tanggal = Carbon::parse($item->tanggal)->format('d/m/Y');
+                
+                $sesi = isset($item->jamSekolah) ? $item->jamSekolah->nama_sesi : 'N/A';
+                
+                return [
+                    'NIS' => $item->nis,
+                    'Nama Siswa' => isset($item->siswa) ? $item->siswa->nama : 'N/A',
+                    'Kelas' => $kelas,
+                    'Jurusan' => $jurusan,
+                    'Tanggal' => $tanggal,
+                    'Sesi/Pelajaran' => $sesi,
+                    'Mata Pelajaran' => '-',
+                    'Guru Pengampu' => '-',
+                    'Jam Masuk' => $jamMasuk,
+                    'Status Masuk' => $item->status_masuk,
+                    'Jam Keluar' => $jamKeluar,
+                    'Keterangan' => $item->keterangan ?? '-',
+                    'Durasi' => $this->calculateDuration($item->jam_masuk, $item->jam_keluar),
+                ];
+            }
         });
     }
     

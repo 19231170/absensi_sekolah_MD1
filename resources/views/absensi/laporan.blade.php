@@ -46,7 +46,7 @@
                         <div class="card bg-success text-white">
                             <div class="card-body text-center">
                                 <i class="fas fa-user-check fa-2x mb-2"></i>
-                                <h4>{{ $absensi->where('status_masuk', 'hadir')->count() }}</h4>
+                                <h4>{{ $absensi->filter(function($item) { return (is_array($item) ? $item['status'] : $item->status_masuk) == 'hadir'; })->count() }}</h4>
                                 <small>Hadir</small>
                             </div>
                         </div>
@@ -55,7 +55,7 @@
                         <div class="card bg-warning text-dark">
                             <div class="card-body text-center">
                                 <i class="fas fa-user-clock fa-2x mb-2"></i>
-                                <h4>{{ $absensi->where('status_masuk', 'telat')->count() }}</h4>
+                                <h4>{{ $absensi->filter(function($item) { return (is_array($item) ? $item['status'] : $item->status_masuk) == 'telat'; })->count() }}</h4>
                                 <small>Telat</small>
                             </div>
                         </div>
@@ -64,7 +64,7 @@
                         <div class="card bg-primary text-white">
                             <div class="card-body text-center">
                                 <i class="fas fa-sign-out-alt fa-2x mb-2"></i>
-                                <h4>{{ $absensi->where('status_keluar', 'sudah_keluar')->count() }}</h4>
+                                <h4>{{ $absensi->filter(function($item) { return (is_array($item) ? $item['jam_keluar'] : $item->jam_keluar) != null; })->count() }}</h4>
                                 <small>Sudah Keluar</small>
                             </div>
                         </div>
@@ -90,7 +90,9 @@
                                 <th>Nama Siswa</th>
                                 <th>Kelas</th>
                                 <th>Jurusan</th>
-                                <th>Sesi</th>
+                                <th>Sesi/Pelajaran</th>
+                                <th>Mata Pelajaran</th>
+                                <th>Guru Pengampu</th>
                                 <th>Jam Masuk</th>
                                 <th>Jam Keluar</th>
                                 <th>Status</th>
@@ -101,39 +103,51 @@
                             @forelse($absensi as $index => $item)
                             <tr>
                                 <td>{{ $index + 1 }}</td>
-                                <td>{{ $item->nis }}</td>
-                                <td>{{ $item->siswa->nama }}</td>
-                                <td>{{ $item->siswa->kelas->nama_lengkap }}</td>
-                                <td>{{ $item->siswa->kelas->jurusan->nama_jurusan }}</td>
-                                <td>{{ $item->jamSekolah->nama_sesi }}</td>
+                                <td>{{ is_array($item) ? $item['nis'] : $item->nis }}</td>
+                                <td>{{ is_array($item) ? $item['nama'] : $item->siswa->nama }}</td>
+                                <td>{{ is_array($item) ? $item['kelas'] : $item->siswa->kelas->nama_lengkap }}</td>
+                                <td>{{ is_array($item) ? $item['jurusan'] : $item->siswa->kelas->jurusan->nama_jurusan }}</td>
                                 <td>
-                                    @if($item->jam_masuk)
-                                        <span class="badge bg-success">{{ $item->jam_masuk }}</span>
+                                    {{ is_array($item) ? $item['sesi'] : $item->jamSekolah->nama_sesi }}
+                                    @if(is_array($item) && $item['type'] == 'pelajaran')
+                                        <span class="badge bg-info ms-1">Pelajaran</span>
+                                    @elseif(is_array($item) && $item['type'] == 'sesi')
+                                        <span class="badge bg-secondary ms-1">Sesi</span>
+                                    @endif
+                                </td>
+                                <td>{{ is_array($item) ? $item['mata_pelajaran'] : '-' }}</td>
+                                <td>{{ is_array($item) ? $item['guru_pengampu'] : '-' }}</td>
+                                <td>
+                                    @if(is_array($item) ? $item['jam_masuk'] : $item->jam_masuk)
+                                        <span class="badge bg-success">{{ is_array($item) ? $item['jam_masuk'] : $item->jam_masuk }}</span>
                                     @else
                                         <span class="badge bg-secondary">-</span>
                                     @endif
                                 </td>
                                 <td>
-                                    @if($item->jam_keluar)
-                                        <span class="badge bg-primary">{{ $item->jam_keluar }}</span>
+                                    @if(is_array($item) ? $item['jam_keluar'] : $item->jam_keluar)
+                                        <span class="badge bg-primary">{{ is_array($item) ? $item['jam_keluar'] : $item->jam_keluar }}</span>
                                     @else
                                         <span class="badge bg-warning text-dark">Belum Keluar</span>
                                     @endif
                                 </td>
                                 <td>
-                                    @if($item->status_masuk == 'hadir')
+                                    @php
+                                        $status = is_array($item) ? $item['status'] : $item->status_masuk;
+                                    @endphp
+                                    @if($status == 'hadir')
                                         <span class="badge bg-success">Hadir</span>
-                                    @elseif($item->status_masuk == 'telat')
+                                    @elseif($status == 'telat')
                                         <span class="badge bg-warning text-dark">Telat</span>
                                     @else
                                         <span class="badge bg-danger">Alpha</span>
                                     @endif
                                 </td>
-                                <td>{{ $item->keterangan ?? '-' }}</td>
+                                <td>{{ is_array($item) ? $item['keterangan'] : ($item->keterangan ?? '-') }}</td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="10" class="text-center py-4">
+                                <td colspan="12" class="text-center py-4">
                                     <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                                     <p class="text-muted">Tidak ada data absensi untuk tanggal yang dipilih.</p>
                                 </td>

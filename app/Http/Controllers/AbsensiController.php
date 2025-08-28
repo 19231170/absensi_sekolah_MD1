@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Absensi;
+use App\Models\AbsensiPelajaran;
 use App\Models\Siswa;
 use App\Models\JamSekolah;
+use App\Models\JadwalKelas;
 use App\Exports\FastExcelAbsensiExport;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -23,14 +25,68 @@ class AbsensiController extends Controller
         $jamSekolahId = $request->get('jam_sekolah_id');
         $export = $request->get('export');
 
-        $query = Absensi::with(['siswa.kelas.jurusan', 'jamSekolah'])
+        // Query untuk absensi lama (per sesi)
+        $queryAbsensiLama = Absensi::with(['siswa.kelas.jurusan', 'jamSekolah'])
             ->whereDate('tanggal', $tanggal);
 
         if ($jamSekolahId) {
-            $query->where('jam_sekolah_id', $jamSekolahId);
+            $queryAbsensiLama->where('jam_sekolah_id', $jamSekolahId);
         }
 
-        $absensi = $query->orderBy('jam_masuk', 'desc')->get();
+        $absensiLama = $queryAbsensiLama->orderBy('jam_masuk', 'desc')->get();
+
+        // Query untuk absensi baru (per pelajaran)
+        $queryAbsensiPelajaran = AbsensiPelajaran::with(['siswa.kelas.jurusan', 'jadwalKelas'])
+            ->whereDate('tanggal', $tanggal);
+
+        $absensiPelajaran = $queryAbsensiPelajaran->orderBy('jam_masuk', 'desc')->get();
+
+        // Gabungkan kedua data absensi
+        $absensi = collect();
+        
+                // Add old absensi data
+        foreach ($absensiLama as $item) {
+            $absensi->push([
+                'type' => 'sesi',
+                'nis' => $item->siswa ? $item->siswa->nis : 'N/A',
+                'nama' => $item->siswa ? $item->siswa->nama : 'N/A',
+                'kelas' => $item->siswa && $item->siswa->kelas ? 
+                    "{$item->siswa->kelas->tingkat} {$item->siswa->kelas->nama_kelas}" : 'N/A',
+                'jurusan' => $item->siswa && $item->siswa->kelas && $item->siswa->kelas->jurusan ? 
+                    $item->siswa->kelas->jurusan->nama_jurusan : 'N/A',
+                'sesi' => $item->jamSekolah ? $item->jamSekolah->nama_sesi : 'N/A',
+                'mata_pelajaran' => '-',
+                'guru_pengampu' => '-',
+                'jam_masuk' => $item->jam_masuk,
+                'jam_keluar' => $item->jam_keluar,
+                'status' => $item->status_masuk ?: 'N/A',
+                'keterangan' => $item->keterangan ?: '-'
+            ]);
+        }
+
+        // Add new absensi pelajaran data
+        foreach ($absensiPelajaran as $item) {
+            $absensi->push([
+                'type' => 'pelajaran',
+                'nis' => $item->siswa ? $item->siswa->nis : 'N/A',
+                'nama' => $item->siswa ? $item->siswa->nama : 'N/A',
+                'kelas' => $item->siswa && $item->siswa->kelas ? 
+                    "{$item->siswa->kelas->tingkat} {$item->siswa->kelas->nama_kelas}" : 'N/A',
+                'jurusan' => $item->siswa && $item->siswa->kelas && $item->siswa->kelas->jurusan ? 
+                    $item->siswa->kelas->jurusan->nama_jurusan : 'N/A',
+                'sesi' => $item->jadwalKelas ? $item->jadwalKelas->mata_pelajaran : 'N/A',
+                'mata_pelajaran' => $item->jadwalKelas ? $item->jadwalKelas->mata_pelajaran : 'N/A',
+                'guru_pengampu' => $item->jadwalKelas ? $item->jadwalKelas->guru_pengampu : 'N/A',
+                'jam_masuk' => $item->jam_masuk,
+                'jam_keluar' => $item->jam_keluar,
+                'status' => $item->status_masuk ?: 'N/A',
+                'keterangan' => $item->keterangan ?: '-'
+            ]);
+        }
+
+        // Sort by jam_masuk descending
+        $absensi = $absensi->sortByDesc('jam_masuk');
+
         $jamSekolah = JamSekolah::aktif()->get();
 
         // Handle export requests

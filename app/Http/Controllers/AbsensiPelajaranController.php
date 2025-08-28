@@ -296,27 +296,39 @@ class AbsensiPelajaranController extends Controller
         
         // Validasi waktu untuk absen masuk
         if ($type === 'masuk') {
-            // Waktu mulai: 15 menit sebelum jam masuk
-            $waktuMulai = Carbon::createFromFormat('H:i:s', $jadwalKelas->jam_masuk)->subMinutes(15)->format('H:i:s');
-            // Waktu selesai: 15 menit setelah jam masuk (atau batas telat jika ada)
-            $waktuSelesai = $jadwalKelas->batas_telat 
-                ? Carbon::createFromFormat('H:i:s', $jadwalKelas->batas_telat)->format('H:i:s')
-                : Carbon::createFromFormat('H:i:s', $jadwalKelas->jam_masuk)->addMinutes(15)->format('H:i:s');
+            // Waktu mulai: 30 menit sebelum jam masuk (sesuai setting sebelumnya)
+            $waktuMulai = Carbon::createFromFormat('H:i:s', $jadwalKelas->jam_masuk)->subMinutes(30)->format('H:i:s');
             
-            if ($jamSekarang < $waktuMulai) {
-                $waktuMulaiDisplay = Carbon::createFromFormat('H:i:s', $waktuMulai)->format('H:i');
-                return [
-                    'valid' => false,
-                    'message' => "Absen masuk untuk pelajaran {$jadwalKelas->mata_pelajaran} belum dimulai. Waktu mulai: {$waktuMulaiDisplay}"
-                ];
-            }
-            
-            if ($jamSekarang > $waktuSelesai) {
-                $waktuSelesaiDisplay = Carbon::createFromFormat('H:i:s', $waktuSelesai)->format('H:i');
-                return [
-                    'valid' => false,
-                    'message' => "Waktu absen masuk untuk pelajaran {$jadwalKelas->mata_pelajaran} telah berakhir. Batas waktu: {$waktuSelesaiDisplay}"
-                ];
+            // Jika admin mengosongkan batas_telat, berarti absen bisa dilakukan kapan saja
+            if (empty($jadwalKelas->batas_telat)) {
+                // Hanya validasi waktu mulai saja
+                if ($jamSekarang < $waktuMulai) {
+                    $waktuMulaiDisplay = Carbon::createFromFormat('H:i:s', $waktuMulai)->format('H:i');
+                    return [
+                        'valid' => false,
+                        'message' => "Absen masuk untuk pelajaran {$jadwalKelas->mata_pelajaran} belum dimulai. Waktu mulai: {$waktuMulaiDisplay}"
+                    ];
+                }
+                // Tidak ada batasan waktu selesai jika batas_telat kosong
+            } else {
+                // Ada batas telat, gunakan sebagai waktu selesai
+                $waktuSelesai = Carbon::createFromFormat('H:i:s', $jadwalKelas->batas_telat)->format('H:i:s');
+                
+                if ($jamSekarang < $waktuMulai) {
+                    $waktuMulaiDisplay = Carbon::createFromFormat('H:i:s', $waktuMulai)->format('H:i');
+                    return [
+                        'valid' => false,
+                        'message' => "Absen masuk untuk pelajaran {$jadwalKelas->mata_pelajaran} belum dimulai. Waktu mulai: {$waktuMulaiDisplay}"
+                    ];
+                }
+                
+                if ($jamSekarang > $waktuSelesai) {
+                    $waktuSelesaiDisplay = Carbon::createFromFormat('H:i:s', $waktuSelesai)->format('H:i');
+                    return [
+                        'valid' => false,
+                        'message' => "Waktu absen masuk untuk pelajaran {$jadwalKelas->mata_pelajaran} telah berakhir. Batas waktu: {$waktuSelesaiDisplay}"
+                    ];
+                }
             }
         }
         
@@ -385,11 +397,18 @@ class AbsensiPelajaranController extends Controller
             'status_masuk' => $status
         ];
         
+        Log::info('Saving absensi data', [
+            'absensi_data' => $absensiData,
+            'existing_absensi' => $existingAbsensi ? $existingAbsensi->id : null
+        ]);
+        
         if ($existingAbsensi) {
             $existingAbsensi->update($absensiData);
             $absensi = $existingAbsensi;
+            Log::info('Updated existing absensi', ['id' => $absensi->id]);
         } else {
             $absensi = AbsensiPelajaran::create($absensiData);
+            Log::info('Created new absensi', ['id' => $absensi->id]);
         }
 
         return response()->json([
@@ -423,6 +442,13 @@ class AbsensiPelajaranController extends Controller
 
         // Jika belum ada absensi sama sekali, buat baru dengan status langsung keluar
         if (!$absensi) {
+            Log::info('Creating new absensi keluar without masuk', [
+                'nis' => $siswa->nis,
+                'jadwal_kelas_id' => $jadwalKelas->id,
+                'tanggal' => $today,
+                'jam_keluar' => $now->format('H:i:s')
+            ]);
+            
             $absensi = AbsensiPelajaran::create([
                 'nis' => $siswa->nis,
                 'jadwal_kelas_id' => $jadwalKelas->id,
@@ -432,6 +458,8 @@ class AbsensiPelajaranController extends Controller
                 'status_masuk' => 'tidak_hadir', // Tidak hadir karena tidak absen masuk
                 'status_keluar' => 'keluar_tanpa_masuk'
             ]);
+            
+            Log::info('Created new absensi keluar without masuk', ['absensi_id' => $absensi->id]);
             
             return response()->json([
                 'success' => true,
@@ -468,10 +496,17 @@ class AbsensiPelajaranController extends Controller
         }
 
         // Update absensi dengan jam keluar
+        Log::info('Updating absensi keluar', [
+            'absensi_id' => $absensi->id,
+            'jam_keluar' => $now->format('H:i:s')
+        ]);
+        
         $absensi->update([
             'jam_keluar' => $now->format('H:i:s'),
             'status_keluar' => 'sudah_keluar'
         ]);
+        
+        Log::info('Absensi keluar updated successfully', ['absensi_id' => $absensi->id]);
 
         return response()->json([
             'success' => true,
