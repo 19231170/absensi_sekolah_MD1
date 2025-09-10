@@ -21,7 +21,8 @@ class Kelas extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
-        'kapasitas' => 'integer'
+        'kapasitas' => 'integer',
+        'tingkat' => 'integer'
     ];
 
     protected $attributes = [
@@ -45,11 +46,11 @@ class Kelas extends Model
     }
 
     /**
-     * Accessor untuk nama lengkap kelas
+     * Accessor para nama lengkap kelas
      */
     public function getNamaLengkapAttribute(): string
     {
         $jurusanNama = $this->jurusan ? $this->jurusan->nama_jurusan : 'Jurusan Tidak Diketahui';
-        return "{$this->tingkat} {$this->nama_kelas} - {$jurusanNama}";
+        return "Kelas {$this->tingkat} {$this->nama_kelas} - {$jurusanNama}";
     }
 }

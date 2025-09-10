@@ -96,6 +96,16 @@
                                         </a>
                                     </li>
                                     <li>
+                                        <a class="dropdown-item text-primary" href="{{ route('kelas.index') }}">
+                                            <i class="fas fa-school me-2"></i> Kelola Kelas
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item text-success" href="{{ route('jurusan.index') }}">
+                                            <i class="fas fa-book me-2"></i> Kelola Jurusan
+                                        </a>
+                                    </li>
+                                    <li>
                                         <a class="dropdown-item" href="{{ route('guru.download.all.zip') }}">
                                             <i class="fas fa-file-archive me-2"></i> Download QR Guru (ZIP)
                                         </a>

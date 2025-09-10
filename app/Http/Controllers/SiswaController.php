@@ -277,27 +277,27 @@ class SiswaController extends Controller
             
             $filePath = $storageDir . '/Template_Siswa_Simplified.csv';
             
-            // Simplified CSV header (hanya 5 kolom yang diperlukan)
+            // Simplified CSV header (4 kolom - lebih ringkas)
             $header = [
-                'nama_siswa', 'nis', 'jenis_kelamin', 'jurusan', 'kelas'
+                'nis', 'nama_siswa', 'jenis_kelamin', 'jurusan/kelas'
             ];
             
-            // Example data rows dengan format baru
+            // Example data rows dengan format baru yang lebih ringkas
             $exampleRows = [
                 [
-                    'Ahmad Fauzi', '2024001', 'L', 'Teknik Komputer dan Jaringan', '10 A'
+                    '2024001', 'Ahmad Fauzi', 'L', 'TKJ/10 A'
                 ],
                 [
-                    'Siti Nurhaliza', '2024002', 'P', 'Rekayasa Perangkat Lunak', '10 B'
+                    '2024002', 'Siti Nurhaliza', 'P', 'RPL/10 B'
                 ],
                 [
-                    'Budi Santoso', '2024003', 'L', 'Teknik Kendaraan Ringan', '11 A'
+                    '2024003', 'Budi Santoso', 'L', 'TKR/11 A'
                 ],
                 [
-                    'Dewi Sartika', '2024004', 'P', 'Akuntansi dan Keuangan Lembaga', '11 AKL 1'
+                    '2024004', 'Dewi Sartika', 'P', 'AKL/11 AKL 1'
                 ],
                 [
-                    'Ridwan Kamil', '2024005', 'L', 'Multimedia', '12 MM 2'
+                    '2024005', 'Ridwan Kamil', 'L', 'MM/12 MM 2'
                 ]
             ];
             

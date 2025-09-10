@@ -98,14 +98,22 @@ Route::middleware(['auth.qr'])->group(function () {
 
     // Admin Only Routes
     Route::middleware('role:admin')->group(function () {
+        // Kelas Management Routes
+        Route::resource('kelas', KelasController::class, ['parameters' => [
+            'kelas' => 'kelas'  // Isso define o parâmetro 'kelas' na URL em vez de 'kela'
+        ]]);
         Route::prefix('kelas')->name('kelas.')->group(function () {
-            Route::post('/store', [KelasController::class, 'store'])->name('store');
             Route::get('/jurusan', [KelasController::class, 'getJurusan'])->name('jurusan');
         });
 
-        // Jurusan AJAX (Admin Only)
+        // Jurusan Management Routes
+        Route::resource('jurusan', JurusanController::class, ['parameters' => [
+            'jurusan' => 'jurusan'  // Isso define o parâmetro 'jurusan' na URL em vez de 'jurusan'
+        ]]);
         Route::prefix('jurusan')->name('jurusan.')->group(function () {
             Route::post('/store', [JurusanController::class, 'store'])->name('store');
+            Route::post('/store-form', [JurusanController::class, 'storeForm'])->name('storeForm');
+            Route::get('/get-all', [JurusanController::class, 'getAllJurusan'])->name('getAll');
         });
 
         // Admin Routes
