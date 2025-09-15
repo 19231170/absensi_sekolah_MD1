@@ -255,7 +255,8 @@ class KelasController extends Controller
 
             // Check if ZIP extension is available
             if (!class_exists('ZipArchive')) {
-                return $this->downloadQrCodesHtml($kelas, $siswaWithQr);
+                // Use JavaScript fallback instead of HTML
+                return $this->downloadQrCodesJs($kelas);
             }
 
             $zip = new \ZipArchive();
@@ -615,7 +616,7 @@ class KelasController extends Controller
     }
 
     /**
-     * Alternative: JavaScript-based ZIP download (no PHP ZIP extension needed)
+     * JavaScript-based ZIP download for single class (no PHP ZIP extension needed)
      */
     public function downloadQrCodesJs(Kelas $kelas)
     {
@@ -634,7 +635,45 @@ class KelasController extends Controller
                 return redirect()->back()->with('error', 'Tidak ada siswa dengan QR code di kelas ini.');
             }
 
-            return view('admin.kelas.download-qr-js', compact('kelas', 'siswaWithQr'));
+            // Prepare data for JavaScript ZIP creation
+            $qrData = [];
+            foreach ($siswaWithQr as $siswa) {
+                try {
+                    // Generate QR dengan frame berwarna untuk siswa
+                    $qrImageData = $this->generateQrWithColoredFrameData($siswa->qr_code, 'siswa', $siswa->nama, 300);
+                    
+                    if ($qrImageData) {
+                        $fileName = "QR_{$siswa->nis}_{$siswa->nama}.png";
+                        $fileName = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $fileName);
+                        
+                        $qrData[] = [
+                            'filename' => $fileName,
+                            'data' => 'data:image/png;base64,' . base64_encode($qrImageData),
+                            'siswa' => $siswa->nama,
+                            'nis' => $siswa->nis
+                        ];
+                    }
+                    
+                } catch (\Exception $e) {
+                    \Log::warning("Gagal membuat QR untuk siswa {$siswa->nis}: " . $e->getMessage());
+                    continue;
+                }
+            }
+
+            if (empty($qrData)) {
+                return redirect()->back()->with('error', 'Gagal membuat QR code untuk siswa di kelas ini.');
+            }
+
+            // Return view with JavaScript ZIP functionality
+            return view('admin.kelas.download_zip_js', [
+                'qrData' => $qrData,
+                'filename' => "QR_Siswa_Kelas_{$kelas->tingkat}_{$kelas->nama_kelas}_" . date('Y-m-d_H-i-s') . '.zip',
+                'kelasInfo' => [
+                    'tingkat' => $kelas->tingkat,
+                    'nama_kelas' => $kelas->nama_kelas,
+                    'jurusan' => $kelas->jurusan ? $kelas->jurusan->nama_jurusan : 'Unknown'
+                ]
+            ]);
 
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal memuat QR codes: ' . $e->getMessage());
@@ -770,7 +809,8 @@ class KelasController extends Controller
 
             // Check if ZIP extension is available
             if (!class_exists('ZipArchive')) {
-                return $this->downloadAllSiswaHtml($siswaWithQr);
+                // Instead of HTML fallback, return JSON data for JavaScript ZIP creation
+                return $this->downloadAllSiswaJs($siswaWithQr);
             }
 
             $zip = new \ZipArchive();
@@ -957,5 +997,48 @@ class KelasController extends Controller
         return response($html)
             ->header('Content-Type', 'text/html; charset=utf-8')
             ->header('Content-Disposition', 'inline; filename="QR_Siswa_All.html"');
+    }
+
+    /**
+     * JavaScript-based ZIP download when ZipArchive is not available
+     */
+    private function downloadAllSiswaJs($siswaWithQr)
+    {
+        // Prepare data for JavaScript ZIP creation
+        $qrData = [];
+        foreach ($siswaWithQr as $siswa) {
+            try {
+                // Generate QR dengan frame berwarna untuk siswa
+                $qrImageData = $this->generateQrWithColoredFrameData($siswa->qr_code, 'siswa', $siswa->nama, 300);
+                
+                if ($qrImageData) {
+                    $kelasInfo = $siswa->kelas ? "{$siswa->kelas->tingkat}_{$siswa->kelas->nama_kelas}" : "NoClass";
+                    $fileName = "{$kelasInfo}_QR_{$siswa->nis}_{$siswa->nama}.png";
+                    $fileName = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $fileName);
+                    
+                    $qrData[] = [
+                        'filename' => $fileName,
+                        'data' => 'data:image/png;base64,' . base64_encode($qrImageData),
+                        'siswa' => $siswa->nama,
+                        'nis' => $siswa->nis,
+                        'kelas' => $kelasInfo
+                    ];
+                }
+                
+            } catch (\Exception $e) {
+                \Log::warning("Gagal membuat QR untuk siswa {$siswa->nis}: " . $e->getMessage());
+                continue;
+            }
+        }
+
+        if (empty($qrData)) {
+            return redirect()->back()->with('error', 'Gagal membuat QR code untuk semua siswa.');
+        }
+
+        // Return view with JavaScript ZIP functionality
+        return view('admin.kelas.download_zip_js', [
+            'qrData' => $qrData,
+            'filename' => 'QR_Siswa_All_' . date('Y-m-d_H-i-s') . '.zip'
+        ]);
     }
 }
