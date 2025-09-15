@@ -56,6 +56,21 @@
                         </div>
                     @endif
 
+                    @php
+                        $zipArchiveAvailable = class_exists('ZipArchive');
+                    @endphp
+                    
+                    @if(!$zipArchiveAvailable)
+                    <div class="alert alert-warning mb-4">
+                        <h6 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Peringatan: Ekstensi ZIP PHP Tidak Tersedia</h6>
+                        <p class="mb-0">Server tidak memiliki ekstensi PHP ZipArchive yang dibutuhkan untuk membaca file Excel. Silahkan:</p>
+                        <ul class="mb-0">
+                            <li><strong>Gunakan file CSV</strong> sebagai gantinya (Excel tidak didukung), atau</li>
+                            <li>Minta administrator server untuk mengaktifkan ekstensi PHP zip</li>
+                        </ul>
+                    </div>
+                    @endif
+                    
                     <div class="alert alert-info mb-4">
                         <h6 class="alert-heading"><i class="fas fa-info-circle"></i> Format Import Baru (Disederhanakan)</h6>
                         <ul class="mb-0">
@@ -65,7 +80,7 @@
                             <li>Sistem akan otomatis membuat jurusan dan kelas jika belum ada</li>
                             <li>QR code akan digenerate otomatis untuk setiap siswa</li>
                             <li>Jika NIS sudah ada, data siswa akan diupdate</li>
-                            <li>File yang diupload harus berformat <strong>.xlsx</strong>, <strong>.xls</strong>, atau <strong>.csv</strong></li>
+                            <li>File yang diupload harus berformat <strong>{{ $zipArchiveAvailable ? '.xlsx, .xls, atau .csv' : 'CSV saja (.csv)' }}</strong>{{ !$zipArchiveAvailable ? ' (file Excel tidak didukung karena tidak ada ekstensi ZipArchive)' : '' }}</li>
                         </ul>
                     </div>
 
@@ -74,9 +89,9 @@
                         <div class="mb-3">
                             <label for="file" class="form-label">File Import <span class="text-danger">*</span></label>
                             <input type="file" class="form-control {{ $errors->has('file') ? 'is-invalid' : '' }}" 
-                                   id="file" name="file" required accept=".xlsx,.xls,.csv">
+                                   id="file" name="file" required accept="{{ $zipArchiveAvailable ? '.xlsx,.xls,.csv' : '.csv' }}">
                             <div class="form-text">
-                                Format yang didukung: <strong>.xlsx</strong>, <strong>.xls</strong>, <strong>.csv</strong>
+                                Format yang didukung: <strong>{{ $zipArchiveAvailable ? '.xlsx, .xls, .csv' : '.csv saja' }}</strong>
                             </div>
                             @if($errors->has('file'))
                                 <div class="invalid-feedback">{{ $errors->first('file') }}</div>

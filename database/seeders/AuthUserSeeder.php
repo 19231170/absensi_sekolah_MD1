@@ -21,7 +21,7 @@ class AuthUserSeeder extends Seeder
             'email_verified_at' => now(),
             'password' => bcrypt('password'),
             'role' => 'admin',
-            'pin' => '1234',
+            'pin' => ('1234'),
             'qr_code' => 'ADM001',
             'nip' => 'ADM001',
             'mata_pelajaran' => null,
@@ -75,7 +75,7 @@ class AuthUserSeeder extends Seeder
                 'email_verified_at' => now(),
                 'password' => bcrypt('password'),
                 'role' => 'guru',
-                'pin' => $teacher['pin'],
+                'pin' => ($teacher['pin']),
                 'qr_code' => $teacher['nip'], // Use NIP as QR code for simplicity
                 'nip' => $teacher['nip'],
                 'mata_pelajaran' => $teacher['mata_pelajaran'],

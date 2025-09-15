@@ -9,6 +9,7 @@ use App\Models\Kelas;
 use App\Models\Jurusan;
 use App\Imports\SiswaImport;
 use App\Imports\FastExcelSiswaImport;
+use App\Imports\CsvImportFallback;
 use Carbon\Carbon;
 
 class SiswaController extends Controller
@@ -206,11 +207,67 @@ class SiswaController extends Controller
                     ->with('error', "Format file tidak didukung. Gunakan .xls, .xlsx, atau .csv. Format yang terdeteksi: " . $detectedExtension . " (client: " . $originalExtension . ", path: " . $pathExtension . ")");
             }
             
-            // Use the new simplified SiswaImport
-            $import = new SiswaImport();
+            // Check if ZipArchive is available
+            $zipArchiveAvailable = class_exists('ZipArchive');
+            Log::info('ZipArchive availability', ['available' => $zipArchiveAvailable]);
             
-            // Import using FastExcel - pass the file object directly
-            $result = $import->import($file);
+            if ($zipArchiveAvailable) {
+                // Use the normal import process if ZipArchive is available
+                $import = new SiswaImport();
+                $result = $import->import($file);
+            } else {
+                // If ZipArchive is not available and file is CSV, use our fallback
+                if ($detectedExtension === 'csv') {
+                    Log::info('Using CSV fallback import (ZipArchive not available)');
+                    
+                    try {
+                        // Get the temporary path of the uploaded file
+                        $tempPath = $file->getRealPath();
+                        
+                        // Use our CSV fallback
+                        $collection = CsvImportFallback::import($tempPath);
+                        
+                        // Process the data manually
+                        $import = new SiswaImport();
+                        $processedRows = 0;
+                        $successRows = 0;
+                        $importErrors = [];
+                        
+                        foreach ($collection as $row) {
+                            try {
+                                $processedRows++;
+                                $result = $import->processRow($row);
+                                if ($result) {
+                                    $successRows++;
+                                }
+                            } catch (\Exception $rowException) {
+                                $importErrors[] = "Error pada baris {$processedRows}: " . $rowException->getMessage();
+                                Log::warning("Import row error", [
+                                    'row' => $processedRows,
+                                    'error' => $rowException->getMessage(),
+                                    'data' => $row
+                                ]);
+                            }
+                        }
+                        
+                        $result = [
+                            'success' => true,
+                            'processed' => $processedRows,
+                            'success_count' => $successRows,
+                            'failed' => $processedRows - $successRows,
+                            'errors' => $importErrors
+                        ];
+                    } catch (\Exception $csvException) {
+                        throw new \Exception("Error dengan CSV fallback: " . $csvException->getMessage());
+                    }
+                } else {
+                    // For Excel files, we need ZipArchive
+                    throw new \Exception(
+                        "Tidak dapat mengimport file Excel karena ekstensi PHP ZipArchive tidak tersedia. ".
+                        "Silakan gunakan file CSV atau pasang ekstensi PHP zip di server Anda."
+                    );
+                }
+            }
             
             // Check if import was successful
             if (!$result['success']) {

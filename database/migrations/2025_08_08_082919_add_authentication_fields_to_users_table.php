@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->enum('role', ['admin', 'guru'])->default('guru')->after('email');
-            $table->string('pin', 4)->nullable()->after('role');
+            $table->string('pin', 4)->nullable()->after('role'); // Increased length for bcrypt hash
             $table->string('qr_code')->unique()->nullable()->after('pin');
             $table->string('nip')->unique()->nullable()->after('qr_code'); // Nomor Induk Pegawai
             $table->string('mata_pelajaran')->nullable()->after('nip');

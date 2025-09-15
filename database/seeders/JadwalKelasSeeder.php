@@ -28,16 +28,16 @@ class JadwalKelasSeeder extends Seeder
         // Buat kelas-kelas lab
         $kelasData = [
             // Kelas 10 PPLG
-            ['nama_kelas' => 'PPLG 1', 'tingkat' => 'X', 'jurusan_id' => $pplg->id],
-            ['nama_kelas' => 'PPLG 2', 'tingkat' => 'X', 'jurusan_id' => $pplg->id],
+            ['nama_kelas' => 'PPLG 1', 'tingkat' => 10, 'jurusan_id' => $pplg->id],
+            ['nama_kelas' => 'PPLG 2', 'tingkat' => 10, 'jurusan_id' => $pplg->id],
             
             // Kelas 11 RPL
-            ['nama_kelas' => 'RPL 1', 'tingkat' => 'XI', 'jurusan_id' => $rpl->id],
-            ['nama_kelas' => 'RPL 2', 'tingkat' => 'XI', 'jurusan_id' => $rpl->id],
+            ['nama_kelas' => 'RPL 1', 'tingkat' => 11, 'jurusan_id' => $rpl->id],
+            ['nama_kelas' => 'RPL 2', 'tingkat' => 11, 'jurusan_id' => $rpl->id],
             
             // Kelas 12 RPL
-            ['nama_kelas' => 'RPL 1', 'tingkat' => 'XII', 'jurusan_id' => $rpl->id],
-            ['nama_kelas' => 'RPL 2', 'tingkat' => 'XII', 'jurusan_id' => $rpl->id],
+            ['nama_kelas' => 'RPL 1', 'tingkat' => 12, 'jurusan_id' => $rpl->id],
+            ['nama_kelas' => 'RPL 2', 'tingkat' => 12, 'jurusan_id' => $rpl->id],
         ];
 
         $kelasIds = [];

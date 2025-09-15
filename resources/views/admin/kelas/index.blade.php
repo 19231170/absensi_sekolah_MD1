@@ -65,6 +65,11 @@
                                             <a href="{{ route('kelas.show', ['kelas' => $item->id]) }}" class="btn btn-info">
                                                 <i class="fas fa-eye"></i> Detail
                                             </a>
+                                            @if($item->siswa->where('status_aktif', true)->where('qr_code', '!=', null)->count() > 0)
+                                            <a href="{{ route('kelas.download.qr', $item->id) }}" class="btn btn-success" title="Download ZIP QR Codes">
+                                                <i class="fas fa-download"></i> ZIP QR
+                                            </a>
+                                            @endif
                                             <a href="{{ route('kelas.edit', ['kelas' => $item->id]) }}" class="btn btn-warning">
                                                 <i class="fas fa-edit"></i> Edit
                                             </a>

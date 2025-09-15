@@ -149,7 +149,7 @@ class SiswaImport
     /**
      * Process single row
      */
-    private function processRow($row)
+    public function processRow($row)
     {
         $this->processedRows++;
         

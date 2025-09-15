@@ -42,6 +42,7 @@
         .status-hadir { background-color: #28a745; }
         .status-telat { background-color: #ffc107; color: #212529; }
         .status-alpha { background-color: #dc3545; }
+        .text-purple { color: #9C27B0 !important; }
     </style>
     @stack('styles')
 </head>
@@ -113,6 +114,16 @@
                                     <li>
                                         <a class="dropdown-item" href="{{ route('guru.download.all.pdf') }}">
                                             <i class="fas fa-file-pdf me-2"></i> Download QR Guru (PDF)
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('kelas.download.all.zip') }}">
+                                            <i class="fas fa-file-archive me-2 text-purple"></i> Download QR Siswa (ZIP)
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('kelas.download.all.pdf') }}">
+                                            <i class="fas fa-file-pdf me-2 text-purple"></i> Download QR Siswa (PDF)
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>

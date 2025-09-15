@@ -37,6 +37,46 @@ Route::get('/login/qr', function() {
     return redirect()->route('qr.login.form');
 });
 
+// Debug route untuk test QR data (no auth required)
+if (config('app.debug')) {
+    Route::get('/debug/qr-test/{kelasId}', function($kelasId) {
+        try {
+            $kelas = \App\Models\Kelas::findOrFail($kelasId);
+            $siswaList = $kelas->siswa()->where('status_aktif', true)->limit(2)->get();
+            
+            $result = [
+                'success' => true,
+                'timestamp' => now()->format('Y-m-d H:i:s'),
+                'kelas_info' => [
+                    'id' => $kelas->id,
+                    'tingkat' => $kelas->tingkat,
+                    'nama_kelas' => $kelas->nama_kelas,
+                    'jurusan' => $kelas->jurusan ? $kelas->jurusan->nama_jurusan : 'Unknown'
+                ],
+                'siswa_count' => $siswaList->count(),
+                'sample_siswa' => $siswaList->map(function($siswa) {
+                    return [
+                        'nis' => $siswa->nis,
+                        'nama' => $siswa->nama,
+                        'has_qr' => !empty($siswa->qr_code),
+                        'qr_preview' => substr($siswa->qr_code ?? '', 0, 50) . '...'
+                    ];
+                })
+            ];
+            
+            return response()->json($result, 200, [], JSON_PRETTY_PRINT);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ], 500, [], JSON_PRETTY_PRINT);
+        }
+    });
+}
+
 // Protected Routes - Authenticated Users Only
 Route::middleware(['auth.qr'])->group(function () {
     
@@ -78,22 +118,20 @@ Route::middleware(['auth.qr'])->group(function () {
         Route::get('/staff/download', [QrController::class, 'downloadStaffQr'])->name('staff.download');
     });
 
-    // Jadwal Kelas Routes - Admin Full CRUD, Guru Read Only
+    // JadwalKelas routes (basic views)
     Route::get('/jadwal-kelas', [JadwalKelasController::class, 'index'])->name('jadwal-kelas.index');
-
-    // Admin Only Routes
-    Route::middleware('role:admin')->group(function () {
-        // Jadwal Kelas CRUD (Admin Only) - Route create harus di atas route dengan parameter
-        Route::get('/jadwal-kelas/create', [JadwalKelasController::class, 'create'])->name('jadwal-kelas.create');
-        Route::post('/jadwal-kelas', [JadwalKelasController::class, 'store'])->name('jadwal-kelas.store');
-        Route::get('/jadwal-kelas/{jadwalKelas}/edit', [JadwalKelasController::class, 'edit'])->name('jadwal-kelas.edit');
-        Route::put('/jadwal-kelas/{jadwalKelas}', [JadwalKelasController::class, 'update'])->name('jadwal-kelas.update');
-        Route::delete('/jadwal-kelas/{jadwalKelas}', [JadwalKelasController::class, 'destroy'])->name('jadwal-kelas.destroy');
-        Route::patch('/jadwal-kelas/{jadwalKelas}/toggle-active', [JadwalKelasController::class, 'toggleActive'])
-            ->name('jadwal-kelas.toggle-active');
-    });
-
+    Route::get('/jadwal-kelas/create', [JadwalKelasController::class, 'create'])->name('jadwal-kelas.create');
+    Route::post('/jadwal-kelas', [JadwalKelasController::class, 'store'])->name('jadwal-kelas.store');
+    // More specific routes first
+    Route::get('/jadwal-kelas/guru/{id}', [JadwalKelasController::class, 'getGuruData'])->name('jadwal-kelas.guru-data');
+    Route::get('/jadwal-kelas/{jadwalKelas}/edit', [JadwalKelasController::class, 'edit'])->name('jadwal-kelas.edit');
+    Route::put('/jadwal-kelas/{jadwalKelas}', [JadwalKelasController::class, 'update'])->name('jadwal-kelas.update');
+    Route::delete('/jadwal-kelas/{jadwalKelas}', [JadwalKelasController::class, 'destroy'])->name('jadwal-kelas.destroy');
+    Route::patch('/jadwal-kelas/{jadwalKelas}/toggle-active', [JadwalKelasController::class, 'toggleActive'])
+        ->name('jadwal-kelas.toggle-active');
+    
     // Route show bisa diakses oleh admin dan guru
+    // General route should be last to avoid conflicts
     Route::get('/jadwal-kelas/{jadwalKelas}', [JadwalKelasController::class, 'show'])->name('jadwal-kelas.show');
 
     // Admin Only Routes
@@ -104,6 +142,16 @@ Route::middleware(['auth.qr'])->group(function () {
         ]]);
         Route::prefix('kelas')->name('kelas.')->group(function () {
             Route::get('/jurusan', [KelasController::class, 'getJurusan'])->name('jurusan');
+            Route::get('/{kelas}/download-qr', [KelasController::class, 'downloadQrCodes'])->name('download.qr');
+            Route::get('/{kelas}/download-qr-js', [KelasController::class, 'downloadQrCodesJs'])->name('download-qr-js');
+            Route::get('/{kelasId}/qr-codes-data', [KelasController::class, 'getQrCodesData'])->name('qr-codes-data');
+            Route::get('/{kelas}/download-multiple', [KelasController::class, 'downloadMultipleQr'])->name('download-multiple');
+            Route::get('/{kelas}/qr-codes', [KelasController::class, 'showQrCodes'])->name('qr.show');
+            Route::get('/{kelas}/siswa/{siswa}/qr', [KelasController::class, 'downloadStudentQr'])->name('siswa.qr')->where('siswa', '[A-Za-z0-9]+');
+            
+            // Global download routes untuk semua siswa
+            Route::get('/download/all/zip', [KelasController::class, 'downloadAllSiswaZip'])->name('download.all.zip');
+            Route::get('/download/all/pdf', [KelasController::class, 'downloadAllSiswaPdf'])->name('download.all.pdf');
         });
 
         // Jurusan Management Routes
@@ -111,7 +159,6 @@ Route::middleware(['auth.qr'])->group(function () {
             'jurusan' => 'jurusan'  // Isso define o parâmetro 'jurusan' na URL em vez de 'jurusan'
         ]]);
         Route::prefix('jurusan')->name('jurusan.')->group(function () {
-            Route::post('/store', [JurusanController::class, 'store'])->name('store');
             Route::post('/store-form', [JurusanController::class, 'storeForm'])->name('storeForm');
             Route::get('/get-all', [JurusanController::class, 'getAllJurusan'])->name('getAll');
         });

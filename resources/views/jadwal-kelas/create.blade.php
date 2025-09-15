@@ -2,6 +2,14 @@
 
 @section('title', 'Tambah Jadwal Persesi')
 
+@section('styles')
+<style>
+    .form-control:disabled {
+        background-color: #f8f9fa;
+    }
+</style>
+@endsection
+
 @section('content')
 <div class="row justify-content-center">
     <div class="col-12">
@@ -121,7 +129,25 @@
                         </div>
 
                         <div class="col-lg-6 mb-3">
-                            <label for="guru_pengampu" class="form-label">Guru Pengampu</label>
+                            <label for="guru_id" class="form-label">Guru Pengampu</label>
+                            <div class="input-group">
+                                <select class="form-select" id="guru_id">
+                                    <option value="">-- Pilih Guru --</option>
+                                    @foreach($guru as $g)
+                                        <option value="{{ $g->id }}" data-mapel="{{ $g->mata_pelajaran }}">{{ $g->name }} - {{ $g->nip ?? 'No NIP' }}</option>
+                                    @endforeach
+                                </select>
+                                <a href="{{ route('guru.index') }}" class="btn btn-outline-primary" title="Kelola Guru" target="_blank">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </div>
+                            <small class="form-text text-muted">Pilih guru untuk mengisi data otomatis</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-lg-12 mb-3">
+                            <label for="guru_pengampu" class="form-label">Nama Guru Pengampu</label>
                             <input type="text" 
                                    class="form-control @error('guru_pengampu') is-invalid @enderror" 
                                    id="guru_pengampu" name="guru_pengampu" 
@@ -492,5 +518,44 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+    // Guru selection for auto-fill
+    document.getElementById('guru_id').addEventListener('change', function() {
+        const guruId = this.value;
+        const guruPengampuField = document.getElementById('guru_pengampu');
+        const mataPelajaranField = document.getElementById('mata_pelajaran');
+        
+        if (!guruId) {
+            guruPengampuField.value = '';
+            return;
+        }
+        
+        // Get selected option
+        const selectedOption = this.options[this.selectedIndex];
+        const selectedGuruName = selectedOption.textContent.split(' - ')[0];
+        
+        // Set guru_pengampu field
+        guruPengampuField.value = selectedGuruName;
+        
+        // Get mata_pelajaran from data attribute
+        const mapel = selectedOption.getAttribute('data-mapel');
+        if (mapel) {
+            mataPelajaranField.value = mapel;
+        }
+        
+        // Optional: Get more detailed data from server
+        fetch('{{ url("jadwal-kelas/guru") }}/' + guruId)
+            .then(response => response.json())
+            .then(data => {
+                if (data.mata_pelajaran) {
+                    mataPelajaranField.value = data.mata_pelajaran;
+                }
+            })
+            .catch(error => console.error('Error fetching guru data:', error));
+    });
+</script>
 @endpush
 @endsection

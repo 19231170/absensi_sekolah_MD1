@@ -18,13 +18,11 @@ class DatabaseSeeder extends Seeder
             JamSekolahSeeder::class,
             KelasSeeder::class,
             SiswaSeeder::class,
+            AuthUserSeeder::class,
         ]);
 
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Removed the default admin creation as we now use AuthUserSeeder
     }
 }

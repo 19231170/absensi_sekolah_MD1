@@ -120,7 +120,29 @@ class JadwalKelasController extends Controller
             'sabtu' => 'Sabtu'
         ];
         
-        return view('jadwal-kelas.create', compact('kelas', 'jurusan', 'hariOptions'));
+        // Get all active teachers (guru)
+        $guru = \App\Models\User::where('role', 'guru')
+                               ->where('is_active', true)
+                               ->orderBy('name')
+                               ->get(['id', 'name', 'mata_pelajaran', 'nip']);
+        
+        return view('jadwal-kelas.create', compact('kelas', 'jurusan', 'hariOptions', 'guru'));
+    }
+    
+    /**
+     * Get teacher data by ID for AJAX
+     */
+    public function getGuruData($id)
+    {
+        $guru = \App\Models\User::where('role', 'guru')
+                               ->where('id', $id)
+                               ->first(['id', 'name', 'mata_pelajaran', 'nip']);
+                               
+        if (!$guru) {
+            return response()->json(['error' => 'Guru tidak ditemukan'], 404);
+        }
+        
+        return response()->json($guru);
     }
 
     /**
@@ -139,25 +161,7 @@ class JadwalKelasController extends Controller
             'keterangan' => 'nullable|string'
         ]);
 
-        // Check for time conflicts
-        $conflicts = JadwalKelas::where('kelas_id', $request->kelas_id)
-            ->where('hari', $request->hari)
-            ->where('is_active', true)
-            ->where(function ($query) use ($request) {
-                $query->whereBetween('jam_masuk', [$request->jam_masuk, $request->jam_keluar])
-                      ->orWhereBetween('jam_keluar', [$request->jam_masuk, $request->jam_keluar])
-                      ->orWhere(function ($q) use ($request) {
-                          $q->where('jam_masuk', '<=', $request->jam_masuk)
-                            ->where('jam_keluar', '>=', $request->jam_keluar);
-                      });
-            })
-            ->exists();
-
-        if ($conflicts) {
-            return redirect()->back()
-                ->withInput()
-                ->withErrors(['jam_masuk' => 'Terdapat konflik waktu dengan jadwal yang sudah ada.']);
-        }
+        // Removed time conflict check to allow overlapping schedules
 
         JadwalKelas::create($request->all());
 
@@ -189,7 +193,21 @@ class JadwalKelasController extends Controller
             'sabtu' => 'Sabtu'
         ];
         
-        return view('jadwal-kelas.edit', compact('jadwalKelas', 'kelas', 'hariOptions'));
+        // Get all active teachers (guru)
+        $guru = \App\Models\User::where('role', 'guru')
+                               ->where('is_active', true)
+                               ->orderBy('name')
+                               ->get(['id', 'name', 'mata_pelajaran', 'nip']);
+                               
+        // Find matching guru if possible
+        $matchingGuru = null;
+        if ($jadwalKelas->guru_pengampu) {
+            $matchingGuru = $guru->first(function($g) use ($jadwalKelas) {
+                return stripos($jadwalKelas->guru_pengampu, $g->name) !== false;
+            });
+        }
+        
+        return view('jadwal-kelas.edit', compact('jadwalKelas', 'kelas', 'hariOptions', 'guru', 'matchingGuru'));
     }
 
     /**
@@ -208,26 +226,7 @@ class JadwalKelasController extends Controller
             'keterangan' => 'nullable|string'
         ]);
 
-        // Check for time conflicts (exclude current record)
-        $conflicts = JadwalKelas::where('kelas_id', $request->kelas_id)
-            ->where('hari', $request->hari)
-            ->where('is_active', true)
-            ->where('id', '!=', $jadwalKelas->id)
-            ->where(function ($query) use ($request) {
-                $query->whereBetween('jam_masuk', [$request->jam_masuk, $request->jam_keluar])
-                      ->orWhereBetween('jam_keluar', [$request->jam_masuk, $request->jam_keluar])
-                      ->orWhere(function ($q) use ($request) {
-                          $q->where('jam_masuk', '<=', $request->jam_masuk)
-                            ->where('jam_keluar', '>=', $request->jam_keluar);
-                      });
-            })
-            ->exists();
-
-        if ($conflicts) {
-            return redirect()->back()
-                ->withInput()
-                ->withErrors(['jam_masuk' => 'Terdapat konflik waktu dengan jadwal yang sudah ada.']);
-        }
+        // Removed time conflict check to allow overlapping schedules
 
         $jadwalKelas->update($request->all());
 

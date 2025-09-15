@@ -16,14 +16,18 @@ class KelasSeeder extends Seeder
     {
         $jurusan = Jurusan::all();
         
-        $tingkat = ['X', 'XI', 'XII'];
+        $tingkat = [
+            'X' => 10,
+            'XI' => 11,
+            'XII' => 12
+        ];
         
         foreach ($jurusan as $jur) {
-            foreach ($tingkat as $t) {
+            foreach ($tingkat as $romanNumeral => $intValue) {
                 for ($i = 1; $i <= 2; $i++) {
                     Kelas::create([
                         'nama_kelas' => $jur->kode_jurusan . ' ' . $i,
-                        'tingkat' => $t,
+                        'tingkat' => $intValue,
                         'jurusan_id' => $jur->id,
                         'kapasitas' => 36
                     ]);
