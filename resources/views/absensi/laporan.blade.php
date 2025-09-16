@@ -160,8 +160,8 @@
                 <!-- Export Buttons -->
                 @if($absensi->count() > 0)
                 <div class="text-center mt-4">
-                    <button class="btn btn-success me-2" onclick="exportToExcel()">
-                        <i class="fas fa-file-excel me-1"></i> Export Excel
+                    <button class="btn btn-success me-2" onclick="exportToExcel()" title="Export ke Excel (atau CSV jika Excel tidak tersedia)">
+                        <i class="fas fa-file-excel me-1"></i> Export Excel/CSV
                     </button>
                     <button class="btn btn-danger" onclick="exportToPDF()">
                         <i class="fas fa-file-pdf me-1"></i> Export PDF
@@ -177,12 +177,36 @@
 @push('scripts')
 <script>
 function exportToExcel() {
+    // Show loading notification
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Mengekspor Data...',
+            text: 'Sedang memproses data untuk export. Jika Excel tidak tersedia, file akan diunduh dalam format CSV.',
+            icon: 'info',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            timer: 2000
+        });
+    }
+    
     const params = new URLSearchParams(window.location.search);
     params.set('export', 'excel');
     window.open(window.location.pathname + '?' + params.toString());
 }
 
 function exportToPDF() {
+    // Show loading notification
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Mengekspor PDF...',
+            text: 'Sedang memproses data untuk export PDF...',
+            icon: 'info',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            timer: 2000
+        });
+    }
+    
     const params = new URLSearchParams(window.location.search);
     params.set('export', 'pdf');
     window.open(window.location.pathname + '?' + params.toString());

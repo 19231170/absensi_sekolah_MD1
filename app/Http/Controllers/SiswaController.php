@@ -123,11 +123,39 @@ class SiswaController extends Controller
      */
     public function destroy($nis)
     {
-        $siswa = Siswa::findOrFail($nis);
-        $siswa->delete();
+        try {
+            $siswa = Siswa::where('nis', $nis)->firstOrFail();
+            
+            // Optional: Check if siswa has related records that need to be handled
+            // For example, delete related absensi records or set constraints
+            
+            $siswaName = $siswa->nama;
+            $siswa->delete();
 
-        return redirect()->route('siswa.index')
-            ->with('success', 'Siswa berhasil dihapus!');
+            \Log::info('Siswa deleted successfully', [
+                'nis' => $nis,
+                'nama' => $siswaName
+            ]);
+
+            return redirect()->route('siswa.index')
+                ->with('success', "Siswa {$siswaName} berhasil dihapus!");
+                
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::warning('Attempt to delete non-existent siswa', ['nis' => $nis]);
+            
+            return redirect()->route('siswa.index')
+                ->with('error', 'Siswa tidak ditemukan.');
+                
+        } catch (\Exception $e) {
+            \Log::error('Error deleting siswa', [
+                'nis' => $nis,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->route('siswa.index')
+                ->with('error', 'Gagal menghapus siswa. Silakan coba lagi.');
+        }
     }
 
     /**

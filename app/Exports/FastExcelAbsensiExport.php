@@ -10,7 +10,7 @@ use Carbon\Carbon;
 class FastExcelAbsensiExport
 {
     /**
-     * Export absensi data to Excel
+     * Export absensi data to Excel (with ZipArchive fallback to CSV)
      *
      * @param \Illuminate\Database\Eloquent\Collection $absensi
      * @param string $tanggal
@@ -19,17 +19,121 @@ class FastExcelAbsensiExport
      */
     public function toExcel($absensi, $tanggal, $jamSekolahId = null)
     {
-        $fileName = 'Laporan_Absensi_' . Carbon::parse($tanggal)->format('Y-m-d') . '.xlsx';
+        // Check if ZipArchive is available
+        if (!class_exists('ZipArchive')) {
+            // Log the fallback
+            \Log::info('ZipArchive not available, using CSV fallback for Excel export');
+            
+            // Use CSV fallback with Excel-compatible headers
+            return $this->toCsvWithExcelHeaders($absensi, $tanggal, $jamSekolahId);
+        }
+        
+        try {
+            $fileName = 'Laporan_Absensi_' . Carbon::parse($tanggal)->format('Y-m-d') . '.xlsx';
+            
+            $data = $this->mapAbsensiData($absensi);
+            
+            $tempFile = tempnam(sys_get_temp_dir(), 'absensi_export');
+            
+            (new FastExcel($data))->export($tempFile);
+            
+            return response()->download($tempFile, $fileName, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ])->deleteFileAfterSend(true);
+            
+        } catch (\Exception $e) {
+            \Log::warning('Excel export failed, falling back to CSV: ' . $e->getMessage());
+            
+            // Fallback to CSV if Excel export fails
+            return $this->toCsvWithExcelHeaders($absensi, $tanggal, $jamSekolahId);
+        }
+    }
+    
+    /**
+     * Export absensi data to CSV with Excel-compatible headers (fallback method)
+     *
+     * @param \Illuminate\Support\Collection $absensi
+     * @param string $tanggal
+     * @param int|null $jamSekolahId
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function toCsvWithExcelHeaders($absensi, $tanggal, $jamSekolahId = null)
+    {
+        $fileName = 'Laporan_Absensi_' . Carbon::parse($tanggal)->format('Y-m-d') . '.csv';
         
         $data = $this->mapAbsensiData($absensi);
         
-        $tempFile = tempnam(sys_get_temp_dir(), 'absensi_export');
+        // Create CSV content manually to avoid ZipArchive dependency
+        $csvContent = $this->generateCsvContent($data);
         
-        (new FastExcel($data))->export($tempFile);
+        // Create temporary file
+        $tempFile = tempnam(sys_get_temp_dir(), 'absensi_export_csv');
+        file_put_contents($tempFile, $csvContent);
         
         return response()->download($tempFile, $fileName, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
         ])->deleteFileAfterSend(true);
+    }
+    
+    /**
+     * Generate CSV content from data array
+     *
+     * @param \Illuminate\Support\Collection $data
+     * @return string
+     */
+    protected function generateCsvContent($data)
+    {
+        if ($data->isEmpty()) {
+            return "No data available\n";
+        }
+        
+        $csvContent = '';
+        
+        // Add BOM for proper UTF-8 encoding in Excel
+        $csvContent .= "\xEF\xBB\xBF";
+        
+        // Get headers from first row
+        $headers = array_keys($data->first());
+        $csvContent .= $this->arrayToCsvLine($headers);
+        
+        // Add data rows
+        foreach ($data as $row) {
+            $csvContent .= $this->arrayToCsvLine(array_values($row));
+        }
+        
+        return $csvContent;
+    }
+    
+    /**
+     * Convert array to CSV line
+     *
+     * @param array $fields
+     * @return string
+     */
+    protected function arrayToCsvLine($fields)
+    {
+        $line = '';
+        $delimiter = ',';
+        $enclosure = '"';
+        
+        foreach ($fields as $field) {
+            // Escape enclosures in the field
+            $field = str_replace($enclosure, $enclosure . $enclosure, (string)$field);
+            
+            // Enclose field if it contains delimiter, enclosure, or newline
+            if (strpos($field, $delimiter) !== false || 
+                strpos($field, $enclosure) !== false || 
+                strpos($field, "\n") !== false || 
+                strpos($field, "\r") !== false) {
+                $field = $enclosure . $field . $enclosure;
+            }
+            
+            $line .= $field . $delimiter;
+        }
+        
+        // Remove trailing delimiter and add newline
+        return rtrim($line, $delimiter) . "\n";
     }
     
     /**
@@ -42,17 +146,30 @@ class FastExcelAbsensiExport
      */
     public function toCsv($absensi, $tanggal, $jamSekolahId = null)
     {
-        $fileName = 'Laporan_Absensi_' . Carbon::parse($tanggal)->format('Y-m-d') . '.csv';
+        // Check if ZipArchive is available, if not use manual CSV generation
+        if (!class_exists('ZipArchive')) {
+            return $this->toCsvWithExcelHeaders($absensi, $tanggal, $jamSekolahId);
+        }
         
-        $data = $this->mapAbsensiData($absensi);
-        
-        $tempFile = tempnam(sys_get_temp_dir(), 'absensi_export');
-        
-        (new FastExcel($data))->export($tempFile);
-        
-        return response()->download($tempFile, $fileName, [
-            'Content-Type' => 'text/csv',
-        ])->deleteFileAfterSend(true);
+        try {
+            $fileName = 'Laporan_Absensi_' . Carbon::parse($tanggal)->format('Y-m-d') . '.csv';
+            
+            $data = $this->mapAbsensiData($absensi);
+            
+            $tempFile = tempnam(sys_get_temp_dir(), 'absensi_export');
+            
+            (new FastExcel($data))->export($tempFile);
+            
+            return response()->download($tempFile, $fileName, [
+                'Content-Type' => 'text/csv',
+            ])->deleteFileAfterSend(true);
+            
+        } catch (\Exception $e) {
+            \Log::warning('FastExcel CSV export failed, using manual CSV generation: ' . $e->getMessage());
+            
+            // Fallback to manual CSV generation
+            return $this->toCsvWithExcelHeaders($absensi, $tanggal, $jamSekolahId);
+        }
     }
     
     /**
