@@ -98,12 +98,12 @@
                 @if(request('search'))
                 <div class="alert search-info">
                     <i class="fas fa-search me-2"></i>
-                    <strong>Hasil Pencarian:</strong> "{{ request('search') }}" - Ditemukan {{ $siswa->count() }} siswa
+                    <strong>Hasil Pencarian:</strong> "{{ request('search') }}" - Ditemukan {{ $siswa->total() }} siswa
                 </div>
                 @else
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>
-                    <strong>Petunjuk:</strong> Klik tombol "Lihat Detail" untuk melihat QR code besar atau "Download" untuk mengunduh QR code siswa. Total: {{ $siswa->count() }} siswa aktif.
+                    <strong>Petunjuk:</strong> Klik tombol "Lihat Detail" untuk melihat QR code besar atau "Download" untuk mengunduh QR code siswa. Total: {{ $siswa->total() }} siswa aktif.
                 </div>
                 @endif
 
@@ -182,6 +182,17 @@
                         @endif
                     @endforelse
                 </div>
+                
+                <!-- Pagination Links -->
+                @if ($siswa->hasPages())
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div class="text-muted">
+                            Menampilkan {{ $siswa->firstItem() }} - {{ $siswa->lastItem() }} 
+                            dari {{ $siswa->total() }} hasil
+                        </div>
+                        {{ $siswa->links('pagination::bootstrap-4') }}
+                    </div>
+                @endif
             </div>
         </div>
     </div>

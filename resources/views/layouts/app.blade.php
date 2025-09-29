@@ -69,6 +69,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="{{ route('statistics.index') }}">
+                            <i class="fas fa-chart-line me-1"></i> Statistik
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ route('qr.index') }}">
                             <i class="fas fa-qrcode me-1"></i> QR Siswa
                         </a>

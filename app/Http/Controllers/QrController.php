@@ -18,21 +18,22 @@ class QrController extends Controller
     {
         $search = $request->get('search');
         
+        $query = Siswa::with(['kelas', 'kelas.jurusan'])->aktif();
+        
         if ($search && trim($search) !== '') {
             // Simple search - hanya NIS dan nama untuk menghindari relationship issues
-            $siswa = Siswa::with(['kelas', 'kelas.jurusan'])
-                ->aktif()
-                ->where(function($query) use ($search) {
-                    $query->where('nis', 'LIKE', '%' . trim($search) . '%')
-                          ->orWhere('nama', 'LIKE', '%' . trim($search) . '%');
-                })
-                ->orderBy('nama')
-                ->get();
-        } else {
-            $siswa = Siswa::with(['kelas', 'kelas.jurusan'])->aktif()->orderBy('nama')->get();
+            $query->where(function($q) use ($search) {
+                $q->where('nis', 'LIKE', '%' . trim($search) . '%')
+                  ->orWhere('nama', 'LIKE', '%' . trim($search) . '%');
+            });
         }
         
-        return view('qr.index', compact('siswa'));
+        $siswa = $query->orderBy('nama')->paginate(20);
+        
+        // Append parameter pencarian ke pagination
+        $siswa->appends($request->query());
+        
+        return view('qr.index', compact('siswa', 'search'));
     }
 
     /**

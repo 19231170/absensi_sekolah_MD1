@@ -7,6 +7,7 @@ use App\Http\Controllers\JadwalKelasController;
 use App\Http\Controllers\KelasController;
 use App\Http\Controllers\JurusanController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\Auth\QrAuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -116,6 +117,13 @@ Route::middleware(['auth.qr'])->group(function () {
         // Staff QR Code
         Route::get('/staff/generate', [QrController::class, 'generateStaffQr'])->name('staff.generate');
         Route::get('/staff/download', [QrController::class, 'downloadStaffQr'])->name('staff.download');
+    });
+
+    // Statistics Routes (Admin & Guru) - Guru hanya untuk kelas yang mereka ampu
+    Route::prefix('statistics')->name('statistics.')->group(function () {
+        Route::get('/', [StatisticsController::class, 'index'])->name('index');
+        Route::get('/student/{nis}', [StatisticsController::class, 'student'])->name('student');
+        Route::get('/class-comparison', [StatisticsController::class, 'classComparison'])->name('class-comparison');
     });
 
     // JadwalKelas routes (basic views)

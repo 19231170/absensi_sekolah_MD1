@@ -47,6 +47,14 @@ class Siswa extends Model
     }
 
     /**
+     * Relasi ke model AbsensiPelajaran
+     */
+    public function absensiPelajaran(): HasMany
+    {
+        return $this->hasMany(AbsensiPelajaran::class, 'nis', 'nis');
+    }
+
+    /**
      * Accessor untuk mendapatkan jurusan melalui kelas
      */
     public function getJurusanAttribute()

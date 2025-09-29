@@ -29,6 +29,43 @@
                         </div>
                     @endif
 
+                    <!-- Search and Filter Form -->
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <form method="GET" class="row g-3">
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control" name="search" 
+                                           placeholder="Cari nama siswa atau NIS..." 
+                                           value="{{ request('search') }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" name="kelas_id">
+                                        <option value="">-- Semua Kelas --</option>
+                                        @foreach($kelasList as $kelas)
+                                            <option value="{{ $kelas->id }}" {{ request('kelas_id') == $kelas->id ? 'selected' : '' }}>
+                                                {{ $kelas->tingkat }} {{ $kelas->nama_kelas }} 
+                                                ({{ $kelas->jurusan->nama_jurusan ?? 'No Jurusan' }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search"></i> Cari
+                                    </button>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{{ route('siswa.index') }}" class="btn btn-secondary">
+                                        <i class="fas fa-times"></i> Reset
+                                    </a>
+                                </div>
+                                <div class="col-md-1">
+                                    <span class="badge bg-info">{{ $siswa->total() }} siswa</span>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
                     <div class="table-responsive">
                         <table class="table table-striped table-hover">
                             <thead>
@@ -98,6 +135,21 @@
                             </tbody>
                         </table>
                     </div>
+                    
+                    <!-- Pagination -->
+                    @if($siswa->hasPages())
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div>
+                                <p class="text-muted mb-0">
+                                    Menampilkan {{ $siswa->firstItem() }} hingga {{ $siswa->lastItem() }} 
+                                    dari {{ $siswa->total() }} siswa
+                                </p>
+                            </div>
+                            <div>
+                                {{ $siswa->appends(request()->query())->links('pagination::bootstrap-4') }}
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

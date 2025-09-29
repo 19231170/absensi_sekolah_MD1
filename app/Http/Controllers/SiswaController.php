@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use App\Models\Siswa;
 use App\Models\Kelas;
 use App\Models\Jurusan;
+use App\Models\AbsensiPelajaran;
+use App\Models\JadwalKelas;
 use App\Imports\SiswaImport;
 use App\Imports\FastExcelSiswaImport;
 use App\Imports\CsvImportFallback;
@@ -17,10 +20,32 @@ class SiswaController extends Controller
     /**
      * Display a listing of the siswa.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $siswa = Siswa::with('kelas.jurusan')->orderBy('nama')->get();
-        return view('siswa.index', compact('siswa'));
+        $query = Siswa::with('kelas.jurusan');
+        
+        // Add search functionality
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nama', 'LIKE', "%{$search}%")
+                  ->orWhere('nis', 'LIKE', "%{$search}%")
+                  ->orWhereHas('kelas', function($kelasQuery) use ($search) {
+                      $kelasQuery->where('nama_kelas', 'LIKE', "%{$search}%")
+                                 ->orWhere('tingkat', 'LIKE', "%{$search}%");
+                  });
+            });
+        }
+        
+        // Add class filter
+        if ($request->has('kelas_id') && $request->kelas_id) {
+            $query->where('kelas_id', $request->kelas_id);
+        }
+        
+        $siswa = $query->orderBy('nama')->paginate(20);
+        $kelasList = \App\Models\Kelas::with('jurusan')->orderBy('tingkat')->orderBy('nama_kelas')->get();
+        
+        return view('siswa.index', compact('siswa', 'kelasList'));
     }
 
     /**
@@ -75,7 +100,190 @@ class SiswaController extends Controller
     public function show($nis)
     {
         $siswa = Siswa::with('kelas.jurusan')->findOrFail($nis);
-        return view('siswa.show', compact('siswa'));
+        
+        // Get personal attendance statistics
+        $statistics = $this->getPersonalStatistics($siswa);
+        
+        return view('siswa.show', compact('siswa', 'statistics'));
+    }
+    
+    /**
+     * Get personal attendance statistics for a student
+     */
+    private function getPersonalStatistics($siswa)
+    {
+        $currentMonth = Carbon::now()->format('Y-m');
+        $currentSemester = Carbon::now()->month >= 7 ? 1 : 2;
+        $currentYear = Carbon::now()->year;
+        
+        // Semester dates
+        if ($currentSemester == 1) {
+            $semesterStart = Carbon::create($currentYear, 7, 1);
+            $semesterEnd = Carbon::create($currentYear, 12, 31);
+        } else {
+            $semesterStart = Carbon::create($currentYear, 1, 1);
+            $semesterEnd = Carbon::create($currentYear, 6, 30);
+        }
+        
+        // Base query for current student
+        $baseQuery = AbsensiPelajaran::where('nis', $siswa->nis);
+        
+        // Monthly stats (current month)
+        $monthlyAttendance = (clone $baseQuery)
+            ->whereMonth('tanggal', Carbon::now()->month)
+            ->whereYear('tanggal', Carbon::now()->year);
+        
+        $monthlyStats = [
+            'total_days' => $monthlyAttendance->count(),
+            'present_days' => $monthlyAttendance->whereNotNull('jam_masuk')->count(),
+            'late_days' => $monthlyAttendance->where('status_masuk', 'telat')->count(),
+            'absent_days' => $monthlyAttendance->whereNull('jam_masuk')->count()
+        ];
+        
+        // Semester stats
+        $semesterAttendance = (clone $baseQuery)
+            ->whereBetween('tanggal', [$semesterStart->format('Y-m-d'), $semesterEnd->format('Y-m-d')]);
+            
+        $semesterStats = [
+            'total_days' => $semesterAttendance->count(),
+            'present_days' => $semesterAttendance->whereNotNull('jam_masuk')->count(),
+            'late_days' => $semesterAttendance->where('status_masuk', 'telat')->count(),
+            'absent_days' => $semesterAttendance->whereNull('jam_masuk')->count()
+        ];
+        
+        // Attendance rate calculations
+        $monthlyAttendanceRate = $monthlyStats['total_days'] > 0 
+            ? round(($monthlyStats['present_days'] / $monthlyStats['total_days']) * 100, 1) 
+            : 0;
+            
+        $semesterAttendanceRate = $semesterStats['total_days'] > 0 
+            ? round(($semesterStats['present_days'] / $semesterStats['total_days']) * 100, 1) 
+            : 0;
+        
+        // Weekly pattern (last 4 weeks)
+        $weeklyPattern = [];
+        for ($i = 3; $i >= 0; $i--) {
+            $weekStart = Carbon::now()->subWeeks($i)->startOfWeek();
+            $weekEnd = Carbon::now()->subWeeks($i)->endOfWeek();
+            
+            $weekAttendance = (clone $baseQuery)
+                ->whereBetween('tanggal', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
+                ->whereNotNull('jam_masuk')
+                ->count();
+                
+            $weekTotal = (clone $baseQuery)
+                ->whereBetween('tanggal', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
+                ->count();
+                
+            $weeklyPattern[] = [
+                'week' => 'Week ' . ($i + 1),
+                'week_label' => $weekStart->format('M d') . ' - ' . $weekEnd->format('M d'),
+                'attendance_count' => $weekAttendance,
+                'total_count' => $weekTotal,
+                'percentage' => $weekTotal > 0 ? round(($weekAttendance / $weekTotal) * 100) : 0
+            ];
+        }
+        
+        // Recent attendance (last 10 records)
+        $recentAttendance = AbsensiPelajaran::with(['jadwalKelas'])
+            ->where('nis', $siswa->nis)
+            ->orderBy('tanggal', 'desc')
+            ->orderBy('jam_masuk', 'desc')
+            ->limit(10)
+            ->get();
+        
+        // Subject-wise attendance (current semester)
+        $subjectAttendance = AbsensiPelajaran::select('jadwal_kelas_id', 
+                DB::raw('COUNT(*) as total'),
+                DB::raw('COUNT(jam_masuk) as present'),
+                DB::raw('SUM(CASE WHEN status_masuk = "telat" THEN 1 ELSE 0 END) as late'))
+            ->with(['jadwalKelas'])
+            ->where('nis', $siswa->nis)
+            ->whereBetween('tanggal', [$semesterStart->format('Y-m-d'), $semesterEnd->format('Y-m-d')])
+            ->groupBy('jadwal_kelas_id')
+            ->get()
+            ->map(function($item) {
+                $attendanceRate = $item->total > 0 ? round(($item->present / $item->total) * 100, 1) : 0;
+                return [
+                    'subject' => $item->jadwalKelas ? $item->jadwalKelas->mata_pelajaran : 'Unknown',
+                    'total' => $item->total,
+                    'present' => $item->present,
+                    'late' => $item->late,
+                    'absent' => $item->total - $item->present,
+                    'attendance_rate' => $attendanceRate
+                ];
+            });
+        
+        // Performance indicators
+        $indicators = [
+            'overall_performance' => $this->getPerformanceLevel($semesterAttendanceRate),
+            'punctuality' => $this->getPunctualityLevel($semesterStats),
+            'consistency' => $this->getConsistencyLevel($weeklyPattern),
+            'improvement_trend' => $this->getImprovementTrend($weeklyPattern)
+        ];
+        
+        return [
+            'monthly' => $monthlyStats,
+            'semester' => $semesterStats,
+            'monthly_rate' => $monthlyAttendanceRate,
+            'semester_rate' => $semesterAttendanceRate,
+            'weekly_pattern' => $weeklyPattern,
+            'recent_attendance' => $recentAttendance,
+            'subject_attendance' => $subjectAttendance,
+            'indicators' => $indicators,
+            'current_month' => Carbon::now()->format('F Y'),
+            'current_semester' => "Semester {$currentSemester} - " . $currentYear
+        ];
+    }
+    
+    private function getPerformanceLevel($attendanceRate)
+    {
+        if ($attendanceRate >= 95) return ['level' => 'Excellent', 'color' => 'success', 'icon' => 'star'];
+        if ($attendanceRate >= 85) return ['level' => 'Good', 'color' => 'primary', 'icon' => 'thumbs-up'];
+        if ($attendanceRate >= 75) return ['level' => 'Average', 'color' => 'warning', 'icon' => 'minus-circle'];
+        return ['level' => 'Needs Improvement', 'color' => 'danger', 'icon' => 'alert-triangle'];
+    }
+    
+    private function getPunctualityLevel($semesterStats)
+    {
+        $lateRate = $semesterStats['total_days'] > 0 
+            ? ($semesterStats['late_days'] / $semesterStats['total_days']) * 100 
+            : 0;
+            
+        if ($lateRate <= 5) return ['level' => 'Very Punctual', 'color' => 'success', 'percentage' => $lateRate];
+        if ($lateRate <= 15) return ['level' => 'Good', 'color' => 'primary', 'percentage' => $lateRate];
+        if ($lateRate <= 25) return ['level' => 'Fair', 'color' => 'warning', 'percentage' => $lateRate];
+        return ['level' => 'Often Late', 'color' => 'danger', 'percentage' => $lateRate];
+    }
+    
+    private function getConsistencyLevel($weeklyPattern)
+    {
+        $rates = collect($weeklyPattern)->pluck('percentage');
+        if ($rates->isEmpty()) return ['level' => 'No Data', 'color' => 'secondary'];
+        
+        $variance = $rates->avg() > 0 ? $rates->reduce(function($carry, $item) use ($rates) {
+            return $carry + pow($item - $rates->avg(), 2);
+        }, 0) / $rates->count() : 0;
+        
+        if ($variance <= 100) return ['level' => 'Very Consistent', 'color' => 'success'];
+        if ($variance <= 400) return ['level' => 'Consistent', 'color' => 'primary'];
+        if ($variance <= 900) return ['level' => 'Moderate', 'color' => 'warning'];
+        return ['level' => 'Inconsistent', 'color' => 'danger'];
+    }
+    
+    private function getImprovementTrend($weeklyPattern)
+    {
+        if (count($weeklyPattern) < 2) return ['trend' => 'No Data', 'color' => 'secondary'];
+        
+        $firstHalf = array_slice($weeklyPattern, 0, 2);
+        $secondHalf = array_slice($weeklyPattern, 2, 2);
+        
+        $firstAvg = collect($firstHalf)->avg('percentage');
+        $secondAvg = collect($secondHalf)->avg('percentage');
+        
+        if ($secondAvg > $firstAvg + 5) return ['trend' => 'Improving', 'color' => 'success', 'icon' => 'trending-up'];
+        if ($secondAvg < $firstAvg - 5) return ['trend' => 'Declining', 'color' => 'danger', 'icon' => 'trending-down'];
+        return ['trend' => 'Stable', 'color' => 'primary', 'icon' => 'minus'];
     }
 
     /**

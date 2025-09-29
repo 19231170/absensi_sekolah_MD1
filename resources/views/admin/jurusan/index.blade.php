@@ -25,8 +25,39 @@
                         </div>
                     @endif
 
+                    <!-- Form Pencarian dan Filter -->
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <form method="GET" action="{{ route('jurusan.index') }}" class="row g-3">
+                                <div class="col-md-4">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           name="search" 
+                                           placeholder="Cari nama atau kode jurusan..." 
+                                           value="{{ request('search') }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search"></i> Cari
+                                    </button>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{{ route('jurusan.index') }}" class="btn btn-secondary">
+                                        <i class="fas fa-refresh"></i> Reset
+                                    </a>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <small class="text-muted">
+                                        Menampilkan {{ $jurusan->firstItem() ?? 0 }} - {{ $jurusan->lastItem() ?? 0 }} 
+                                        dari {{ $jurusan->total() }} data
+                                    </small>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
                     <div class="table-responsive">
-                        <table class="table table-bordered table-striped" id="jurusan-table">
+                        <table class="table table-bordered table-striped">
                             <thead>
                                 <tr>
                                     <th>No</th>
@@ -40,7 +71,7 @@
                             <tbody>
                                 @forelse ($jurusan as $index => $item)
                                 <tr>
-                                    <td>{{ $index + 1 }}</td>
+                                    <td>{{ ($jurusan->currentPage() - 1) * $jurusan->perPage() + $loop->iteration }}</td>
                                     <td><span class="badge bg-primary">{{ $item->kode_jurusan }}</span></td>
                                     <td>{{ $item->nama_jurusan }}</td>
                                     <td>{{ $item->kelas_count }}</td>
@@ -86,27 +117,32 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="6" class="text-center">Tidak ada data jurusan</td>
+                                    <td colspan="6" class="text-center">
+                                        @if(request('search'))
+                                            Tidak ada data jurusan yang cocok dengan pencarian "{{ request('search') }}"
+                                        @else
+                                            Tidak ada data jurusan
+                                        @endif
+                                    </td>
                                 </tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
+                    
+                    <!-- Pagination Links -->
+                    @if ($jurusan->hasPages())
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Menampilkan {{ $jurusan->firstItem() }} - {{ $jurusan->lastItem() }} 
+                                dari {{ $jurusan->total() }} hasil
+                            </div>
+                            {{ $jurusan->links('pagination::bootstrap-4') }}
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-    $(document).ready(function() {
-        $('#jurusan-table').DataTable({
-            "language": {
-                "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Indonesian.json"
-            }
-        });
-    });
-</script>
-@endpush

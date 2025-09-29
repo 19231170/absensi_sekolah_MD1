@@ -15,11 +15,25 @@ class JurusanController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $jurusan = Jurusan::withCount('kelas', 'siswa')->orderBy('nama_jurusan')->get();
-            return view('admin.jurusan.index', compact('jurusan'));
+            $search = $request->get('search');
+            
+            $query = Jurusan::withCount(['kelas', 'siswa']);
+            
+            // Filter berdasarkan pencarian
+            if ($search) {
+                $query->where('nama_jurusan', 'like', "%{$search}%")
+                      ->orWhere('kode_jurusan', 'like', "%{$search}%");
+            }
+            
+            $jurusan = $query->orderBy('nama_jurusan')->paginate(15);
+            
+            // Append parameter pencarian ke pagination
+            $jurusan->appends($request->query());
+            
+            return view('admin.jurusan.index', compact('jurusan', 'search'));
         } catch (\Exception $e) {
             Log::error('Error saat mengambil data jurusan: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Gagal memuat data jurusan: ' . $e->getMessage());

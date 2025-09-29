@@ -17,11 +17,32 @@ class KelasController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $kelas = Kelas::with('jurusan')->orderBy('tingkat')->orderBy('nama_kelas')->get();
-            return view('admin.kelas.index', compact('kelas'));
+            $query = Kelas::with('jurusan');
+            
+            // Add search functionality
+            if ($request->has('search') && $request->search) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('nama_kelas', 'LIKE', "%{$search}%")
+                      ->orWhere('tingkat', 'LIKE', "%{$search}%")
+                      ->orWhereHas('jurusan', function($jurusanQuery) use ($search) {
+                          $jurusanQuery->where('nama_jurusan', 'LIKE', "%{$search}%");
+                      });
+                });
+            }
+            
+            // Add jurusan filter
+            if ($request->has('jurusan_id') && $request->jurusan_id) {
+                $query->where('jurusan_id', $request->jurusan_id);
+            }
+            
+            $kelas = $query->orderBy('tingkat')->orderBy('nama_kelas')->paginate(15);
+            $jurusanList = \App\Models\Jurusan::orderBy('nama_jurusan')->get();
+            
+            return view('admin.kelas.index', compact('kelas', 'jurusanList'));
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal memuat data kelas: ' . $e->getMessage());
         }

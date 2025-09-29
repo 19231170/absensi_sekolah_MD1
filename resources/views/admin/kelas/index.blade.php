@@ -25,8 +25,44 @@
                         </div>
                     @endif
 
+                    <!-- Search and Filter Form -->
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <form method="GET" class="row g-3">
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control" name="search" 
+                                           placeholder="Cari kelas atau tingkat..." 
+                                           value="{{ request('search') }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" name="jurusan_id">
+                                        <option value="">-- Semua Jurusan --</option>
+                                        @foreach($jurusanList as $jurusan)
+                                            <option value="{{ $jurusan->id }}" {{ request('jurusan_id') == $jurusan->id ? 'selected' : '' }}>
+                                                {{ $jurusan->nama_jurusan }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search"></i> Cari
+                                    </button>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{{ route('kelas.index') }}" class="btn btn-secondary">
+                                        <i class="fas fa-times"></i> Reset
+                                    </a>
+                                </div>
+                                <div class="col-md-1">
+                                    <span class="badge bg-info">{{ $kelas->total() }} kelas</span>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
                     <div class="table-responsive">
-                        <table class="table table-bordered table-striped" id="kelas-table">
+                        <table class="table table-bordered table-striped">
                             <thead>
                                 <tr>
                                     <th>No</th>
@@ -41,7 +77,7 @@
                             <tbody>
                                 @forelse ($kelas as $index => $item)
                                 <tr>
-                                    <td>{{ $index + 1 }}</td>
+                                    <td>{{ $kelas->firstItem() + $index }}</td>
                                     <td>{{ $item->tingkat }} {{ $item->nama_kelas }}</td>
                                     <td>
                                         @if($item->jurusan)
@@ -112,21 +148,24 @@
                             </tbody>
                         </table>
                     </div>
+                    
+                    <!-- Pagination -->
+                    @if($kelas->hasPages())
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div>
+                                <p class="text-muted mb-0">
+                                    Menampilkan {{ $kelas->firstItem() }} hingga {{ $kelas->lastItem() }} 
+                                    dari {{ $kelas->total() }} kelas
+                                </p>
+                            </div>
+                            <div>
+                                {{ $kelas->appends(request()->query())->links('pagination::bootstrap-4') }}
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-    $(document).ready(function() {
-        $('#kelas-table').DataTable({
-            "language": {
-                "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Indonesian.json"
-            }
-        });
-    });
-</script>
-@endpush
